@@ -7,7 +7,7 @@ module.exports = {
   // Konfigurasi Database Turso & Vercel
   TURSO_DATABASE_URL: 'libsql://random-chat-db-pawscat.aws-ap-northeast-1.turso.io',
   TURSO_AUTH_TOKEN: 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODQyMjQ5NDIsImlkIjoiMDE5ZjZjMTctOTkwMS03ZGVhLTg0M2EtOWU3NGY3NGI4NTIyIiwia2lkIjoiamdpLVVsSndJNTBlekhuNUpiTDVfd214TmQ1QURJeHBldjNZemwxVlpybyIsInJpZCI6IjY1NmY0NDMwLTkyYTctNGZmMy05YTA1LTM2OGRkYjc5NjNiMSJ9._xLpqYWRxKUTVbR7wnarEhcSNxCJUT737yWiQx2wwcWR-3_NWfQpE6Ef7wffQFEkXlBQHKuPBXRKRp-p952ECw',
-  WEBHOOK_URL: 'ISI_URL_VERCEL_DISINI',
+  WEBHOOK_URL: 'https://random-chat-nu.vercel.app/api/webhook',
 
   DB_FILE: 'bot_data.sqlite',
   MAIN_BOT_USERNAME: 'randomchating_bot',
