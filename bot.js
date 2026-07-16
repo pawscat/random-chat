@@ -104,9 +104,10 @@ function startMainBot() {
 
   async function safeSendMessage(chatId, text, options = {}) {
     try {
-      await bot.sendMessage(chatId, text, options);
-      return true;
+      const res = await bot.sendMessage(chatId, text, options);
+      return res;
     } catch (error) {
+      console.error(`[Error] safeSendMessage ke ${chatId} gagal:`, error.message);
       return false;
     }
   }
@@ -292,15 +293,21 @@ function startMainBot() {
     const h = Math.floor(uptime % (3600*24) / 3600);
     const m = Math.floor(uptime % 3600 / 60);
 
-    let text = `🖥 *Spesifikasi Server*\n\n`;
-    text += `*OS:* ${os.type()} ${os.release()} (${os.arch()})\n`;
-    text += `*CPU:* ${cpuCores} Cores - ${cpuModel}\n`;
-    text += `*RAM:* ${usedMem}GB / ${totalMem}GB (Sisa: ${freeMem}GB)\n`;
-    text += `*Uptime:* ${d}h ${h}m\n`;
-    text += `*Node.js:* ${process.version}\n`;
-    text += `*Environment:* ${process.env.VERCEL ? 'Vercel Serverless' : 'Lokal / VPS'}`;
+    let text = `🖥 <b>Spesifikasi Server</b>\n\n`;
+    text += `<b>OS:</b> ${os.type()} ${os.release()} (${os.arch()})\n`;
+    text += `<b>CPU:</b> ${cpuCores} Cores - ${cpuModel}\n`;
+    text += `<b>RAM:</b> ${usedMem}GB / ${totalMem}GB (Sisa: ${freeMem}GB)\n`;
+    text += `<b>Uptime:</b> ${d}h ${h}m\n`;
+    text += `<b>Node.js:</b> ${process.version}\n`;
+    text += `<b>Environment:</b> ${process.env.VERCEL ? 'Vercel Serverless' : 'Lokal / VPS'}`;
 
-    await safeSendMessage(msg.chat.id, text, { parse_mode: 'Markdown' });
+    await safeSendMessage(msg.chat.id, text, { parse_mode: 'HTML' });
+  }));
+
+  bot.onText(/^\/resetbroadcast$/i, runSafely(async (msg) => {
+    if (!isSuperAdmin(msg.from.id)) return;
+    await setRuntimeState('broadcastInProgress', 'false');
+    await safeSendMessage(msg.chat.id, '✅ Antrean broadcast berhasil di-reset secara paksa.');
   }));
 
   bot.onText(/^\/start(?:@\w+)?$/i, runSafely(async (msg) => {
