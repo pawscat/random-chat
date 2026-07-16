@@ -22,11 +22,13 @@ try {
 
   // Mengirim notifikasi ke Super Admin
   const config = require('./config');
-  for (const adminId of config.SUPER_ADMIN_IDS) {
-    mainBot.sendMessage(adminId, "🚀 Bot telah berhasil dijalankan secara lokal (Mode Dev) dan siap digunakan!").catch(err => {
-      console.error(`Gagal mengirim notif ke ${adminId}:`, err.message);
+  // Notify all admins
+  const allAdmins = new Set([...config.SUPER_ADMIN_IDS, ...config.ADMIN_IDS]);
+  allAdmins.forEach(id => {
+    mainBot.sendMessage(id, '🚀 Bot berhasil dijalankan di mode lokal (Polling).').catch(err => {
+      console.error(`Gagal mengirim notif ke ${id}:`, err.message);
     });
-  }
+  });
 
   console.log("✅ Main Bot dan Report Bot sedang berjalan.");
   console.log("💡 (Tekan Ctrl+C di terminal ini untuk berhenti)\n");

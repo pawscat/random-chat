@@ -28,8 +28,9 @@ async function setupWebhooks() {
 
     console.log('\nSelesai! Kedua webhook berhasil didaftarkan ke Telegram API.');
 
-    // Kirim notifikasi ke super admin
-    for (const adminId of config.SUPER_ADMIN_IDS) {
+    // Kirim notifikasi ke semua admin dan super admin
+    const allAdmins = new Set([...config.SUPER_ADMIN_IDS, ...config.ADMIN_IDS]);
+    for (const adminId of allAdmins) {
       mainBot.sendMessage(adminId, `🚀 Webhook Vercel berhasil dipasang!\nBot kini aktif di Cloud: ${vercelDomain}`).catch(() => {});
     }
   } catch (err) {
