@@ -223,16 +223,22 @@ function startMainBot() {
     if (!sent) await safeSendMessage(fromId, 'Pesan gagal diteruskan. Coba kirim ulang.');
   }
 
+  bot.pendingPromises = [];
   function runSafely(handler) {
     return async (...args) => {
-      try {
-        await handler(...args);
-      } catch (error) {
-        const msg = args[0];
-        if (msg?.chat?.id) {
-          await safeSendMessage(msg.chat.id, 'Terjadi kesalahan sistem. Coba lagi beberapa saat.');
+      const p = (async () => {
+        try {
+          await handler(...args);
+        } catch (error) {
+          const msg = args[0];
+          if (msg?.chat?.id) {
+            await safeSendMessage(msg.chat.id, 'Terjadi kesalahan sistem. Coba lagi beberapa saat.');
+          }
         }
-      }
+      })();
+      bot.pendingPromises.push(p);
+      await p;
+      bot.pendingPromises = bot.pendingPromises.filter(x => x !== p);
     };
   }
 

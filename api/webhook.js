@@ -17,11 +17,14 @@ module.exports = async function handler(req, res) {
   try {
     if (bot === 'main') {
       await mainBot.processUpdate(update);
+      if (mainBot.pendingPromises && mainBot.pendingPromises.length) await Promise.allSettled(mainBot.pendingPromises);
     } else if (bot === 'report') {
       await reportBot.processUpdate(update);
+      if (reportBot.pendingPromises && reportBot.pendingPromises.length) await Promise.allSettled(reportBot.pendingPromises);
     } else if (update && update.message && update.message.text && update.message.text.startsWith('/continue_broadcast')) {
       // Self-trigger untuk sistem broadcast estafet (menghindari timeout Vercel)
       await mainBot.processUpdate(update);
+      if (mainBot.pendingPromises && mainBot.pendingPromises.length) await Promise.allSettled(mainBot.pendingPromises);
     } else {
       // Jika bot query parameter tidak ada, return error
       console.warn('Unknown webhook destination', req.query);

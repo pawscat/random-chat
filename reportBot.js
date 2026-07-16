@@ -112,16 +112,22 @@ function startReportBot() {
     await safeSendMessage(uid, `${config.MESSAGES.banned}\nAlasan: ${safeReason}`);
   }
 
+  bot.pendingPromises = [];
   function runSafely(handler) {
     return async (...args) => {
-      try {
-        await handler(...args);
-      } catch (error) {
-        const msg = args[0];
-        if (msg?.chat?.id) {
-          await safeSendMessage(msg.chat.id, 'Terjadi kesalahan sistem report. Coba lagi nanti.');
+      const p = (async () => {
+        try {
+          await handler(...args);
+        } catch (error) {
+          const msg = args[0];
+          if (msg?.chat?.id) {
+            await safeSendMessage(msg.chat.id, 'Terjadi kesalahan. Silakan coba lagi.');
+          }
         }
-      }
+      })();
+      bot.pendingPromises.push(p);
+      await p;
+      bot.pendingPromises = bot.pendingPromises.filter(x => x !== p);
     };
   }
 
