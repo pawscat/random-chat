@@ -1,6 +1,7 @@
 'use strict';
 
 const TelegramBot = require('node-telegram-bot-api');
+const os = require('os');
 const config = require('./config');
 const database = require('./database');
 
@@ -254,9 +255,53 @@ function startMainBot() {
       `${config.ADMIN_COMMANDS.BAN} USER_ID alasan`,
       `${config.ADMIN_COMMANDS.UNBAN} USER_ID`,
       `${config.ADMIN_COMMANDS.BANNED} [PAGE]`,
-      `${config.ADMIN_COMMANDS.USER_INFO} USER_ID`
+      `${config.ADMIN_COMMANDS.USER_INFO} USER_ID`,
+      `${config.ADMIN_COMMANDS.PING} (Super Admin)`,
+      `${config.ADMIN_COMMANDS.SERVER} (Super Admin)`
     ].join('\n');
   }
+
+  bot.onText(new RegExp(`^${config.ADMIN_COMMANDS.PING}$`), runSafely(async (msg) => {
+    if (!isSuperAdmin(msg.from.id)) {
+      return safeSendMessage(msg.chat.id, 'Perintah ini hanya untuk Super Admin.');
+    }
+    const start = Date.now();
+    const reply = await safeSendMessage(msg.chat.id, 'Pinging...');
+    if (reply) {
+      const diff = Date.now() - start;
+      bot.editMessageText(`🏓 Pong!\nLatency: ${diff}ms`, {
+        chat_id: msg.chat.id,
+        message_id: reply.message_id
+      }).catch(() => {});
+    }
+  }));
+
+  bot.onText(new RegExp(`^${config.ADMIN_COMMANDS.SERVER}$`), runSafely(async (msg) => {
+    if (!isSuperAdmin(msg.from.id)) {
+      return safeSendMessage(msg.chat.id, 'Perintah ini hanya untuk Super Admin.');
+    }
+    const totalMem = (os.totalmem() / 1024 / 1024 / 1024).toFixed(2);
+    const freeMem = (os.freemem() / 1024 / 1024 / 1024).toFixed(2);
+    const usedMem = (totalMem - freeMem).toFixed(2);
+    const cpus = os.cpus();
+    const cpuModel = cpus[0]?.model || 'Unknown';
+    const cpuCores = cpus.length;
+    const uptime = os.uptime();
+    
+    const d = Math.floor(uptime / (3600*24));
+    const h = Math.floor(uptime % (3600*24) / 3600);
+    const m = Math.floor(uptime % 3600 / 60);
+
+    let text = `🖥 *Spesifikasi Server*\n\n`;
+    text += `*OS:* ${os.type()} ${os.release()} (${os.arch()})\n`;
+    text += `*CPU:* ${cpuCores} Cores - ${cpuModel}\n`;
+    text += `*RAM:* ${usedMem}GB / ${totalMem}GB (Sisa: ${freeMem}GB)\n`;
+    text += `*Uptime:* ${d}h ${h}m\n`;
+    text += `*Node.js:* ${process.version}\n`;
+    text += `*Environment:* ${process.env.VERCEL ? 'Vercel Serverless' : 'Lokal / VPS'}`;
+
+    await safeSendMessage(msg.chat.id, text, { parse_mode: 'Markdown' });
+  }));
 
   bot.onText(/^\/start(?:@\w+)?$/i, runSafely(async (msg) => {
     if (!msg.from) return;
