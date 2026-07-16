@@ -1,0 +1,7 @@
+node_modules/
+bot_data.sqlite
+bot_data.sqlite-wal
+bot_data.sqlite-shm
+.env
+
+config.js
