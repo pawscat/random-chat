@@ -229,7 +229,16 @@ function startReportBot() {
 
   bot.onText(/^\/admin(?:@\w+)?$/i, runSafely(async (msg) => {
     if (!msg.from || !isAdmin(msg.from.id)) return;
-    await safeSendMessage(msg.chat.id, '/reports, /nextreport, /claim ID, /resolve ID note, /reject ID alasan, /banreported ID');
+    const adminHelp = [
+      '🛠 <b>Daftar Perintah Report Bot (Admin):</b>',
+      '<code>/reports</code> - Lihat semua laporan (Pending & Claimed)',
+      '<code>/nextreport</code> - Ambil antrean laporan terlama',
+      '<code>/claim ID</code> - Ambil spesifik laporan berdasarkan ID',
+      '<code>/resolve ID catatan</code> - Tandai laporan selesai dengan catatan',
+      '<code>/reject ID alasan</code> - Tolak laporan karena tidak valid',
+      '<code>/banreported ID</code> - Banned pelaku dan selesaikan laporan'
+    ].join('\n');
+    await safeSendMessage(msg.chat.id, adminHelp, { parse_mode: 'HTML' });
   }));
 
   bot.onText(/^\/reports(?:@\w+)?$/i, runSafely(async (msg) => {
