@@ -289,16 +289,11 @@ function startMainBot() {
     const cpuModel = cpus[0]?.model || 'Unknown';
     const cpuCores = cpus.length;
     const uptime = os.uptime();
-    
-    let uptimeText = '';
-    if (process.env.VERCEL) {
-      uptimeText = 'Dinamis (Serverless On-Demand)';
-    } else {
-      const d = Math.floor(uptime / (3600*24));
-      const h = Math.floor(uptime % (3600*24) / 3600);
-      const m = Math.floor(uptime % 3600 / 60);
-      uptimeText = `${d}h ${h}m`;
-    }
+    const d = Math.floor(uptime / (3600*24));
+    const h = Math.floor(uptime % (3600*24) / 3600);
+    const m = Math.floor(uptime % 3600 / 60);
+    const s = Math.floor(uptime % 60);
+    const uptimeText = `${d} Hari ${h} Jam ${m} Menit ${s} Detik`;
 
     let storageText = 'Unknown';
     try {
