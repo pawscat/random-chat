@@ -2,6 +2,7 @@
 
 const TelegramBot = require('node-telegram-bot-api');
 const os = require('os');
+const fs = require('fs');
 const config = require('./config');
 const database = require('./database');
 
@@ -289,15 +290,33 @@ function startMainBot() {
     const cpuCores = cpus.length;
     const uptime = os.uptime();
     
-    const d = Math.floor(uptime / (3600*24));
-    const h = Math.floor(uptime % (3600*24) / 3600);
-    const m = Math.floor(uptime % 3600 / 60);
+    let uptimeText = '';
+    if (process.env.VERCEL) {
+      uptimeText = 'Dinamis (Serverless On-Demand)';
+    } else {
+      const d = Math.floor(uptime / (3600*24));
+      const h = Math.floor(uptime % (3600*24) / 3600);
+      const m = Math.floor(uptime % 3600 / 60);
+      uptimeText = `${d}h ${h}m`;
+    }
+
+    let storageText = 'Unknown';
+    try {
+      const stats = fs.statfsSync(process.env.VERCEL ? '/tmp' : process.cwd());
+      const totalDisk = (stats.bsize * stats.blocks / 1024 / 1024 / 1024).toFixed(2);
+      const freeDisk = (stats.bsize * stats.bavail / 1024 / 1024 / 1024).toFixed(2);
+      const usedDisk = (totalDisk - freeDisk).toFixed(2);
+      storageText = `${usedDisk}GB / ${totalDisk}GB (Sisa: ${freeDisk}GB)`;
+    } catch (e) {
+      storageText = 'Tidak dapat diakses';
+    }
 
     let text = `🖥 <b>Spesifikasi Server</b>\n\n`;
     text += `<b>OS:</b> ${os.type()} ${os.release()} (${os.arch()})\n`;
     text += `<b>CPU:</b> ${cpuCores} Cores - ${cpuModel}\n`;
     text += `<b>RAM:</b> ${usedMem}GB / ${totalMem}GB (Sisa: ${freeMem}GB)\n`;
-    text += `<b>Uptime:</b> ${d}h ${h}m\n`;
+    text += `<b>Storage:</b> ${storageText}\n`;
+    text += `<b>Uptime:</b> ${uptimeText}\n`;
     text += `<b>Node.js:</b> ${process.version}\n`;
     text += `<b>Environment:</b> ${process.env.VERCEL ? 'Vercel Serverless' : 'Lokal / VPS'}`;
 
