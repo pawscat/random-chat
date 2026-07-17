@@ -350,6 +350,16 @@ function startMainBot() {
     await safeSendMessage(msg.chat.id, helpText);
   }));
 
+  bot.onText(/^\/admin(?:@\w+)?$/i, runSafely(async (msg) => {
+    if (!msg.from) return;
+    const userId = Number(msg.from.id);
+    if (!isAdmin(userId)) {
+      await safeSendMessage(msg.chat.id, 'Perintah ini hanya untuk admin.');
+      return;
+    }
+    await safeSendMessage(msg.chat.id, getAdminCommandsHelp());
+  }));
+
   bot.onText(/^\/search(?:@\w+)?$/i, runSafely(async (msg) => {
     if (!msg.from) return;
     const userId = Number(msg.from.id);

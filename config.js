@@ -33,7 +33,8 @@ module.exports = {
     BANNED: '/banned',
     USER_INFO: '/userinfo',
     PING: '/ping',
-    SERVER: '/server'
+    SERVER: '/server',
+    ADMIN: '/admin'
   },
   USER_MESSAGE_RATE_LIMIT: {
     windowMs: 3000,
