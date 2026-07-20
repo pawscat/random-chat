@@ -1004,6 +1004,11 @@ body {
   transition: border-color 0.2s;
 }
 
+.settings-input option {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
 .settings-input:focus {
   outline: none;
   border-color: var(--accent-blue);
