@@ -48,18 +48,18 @@ function startMainBot() {
     return (await isUserBanned(uid)) || (await getUserStatus(uid)) === 'banned';
   }
 
-  async function setUserState(userId, state) {
+  async function setUserState(userId, state, profile) {
     const uid = Number(userId);
     const normalized = normalizeStatus(state);
-    await upsertUser(uid);
+    await upsertUser(uid, profile);
     if (normalized !== 'banned' && await isUserBanned(uid)) return;
     await updateUserStatus(uid, normalized);
     await updateLastActive(uid);
   }
 
-  async function touchUser(userId) {
+  async function touchUser(userId, profile) {
     const uid = Number(userId);
-    const user = await upsertUser(uid);
+    const user = await upsertUser(uid, profile);
     if (user && user.is_banned === 1 && user.status !== 'banned') {
       await updateUserStatus(uid, 'banned');
     }
@@ -327,7 +327,7 @@ function startMainBot() {
   bot.onText(/^\/start(?:@\w+)?$/i, runSafely(async (msg) => {
     if (!msg.from) return;
     const userId = Number(msg.from.id);
-    await touchUser(userId);
+    await touchUser(userId, msg.from);
     if (await isBanned(userId)) {
       await enforceBanState(userId, { notifySelf: true, selfChatId: msg.chat.id });
       return;
@@ -340,7 +340,7 @@ function startMainBot() {
   bot.onText(/^\/help(?:@\w+)?$/i, runSafely(async (msg) => {
     if (!msg.from) return;
     const userId = Number(msg.from.id);
-    await touchUser(userId);
+    await touchUser(userId, msg.from);
     if (await isBanned(userId)) {
       await enforceBanState(userId, { notifySelf: true, selfChatId: msg.chat.id });
       return;
@@ -363,7 +363,7 @@ function startMainBot() {
   bot.onText(/^\/search(?:@\w+)?$/i, runSafely(async (msg) => {
     if (!msg.from) return;
     const userId = Number(msg.from.id);
-    await touchUser(userId);
+    await touchUser(userId, msg.from);
     if (await isBanned(userId)) {
       await enforceBanState(userId, { notifySelf: true, selfChatId: msg.chat.id });
       return;
@@ -383,7 +383,7 @@ function startMainBot() {
   bot.onText(/^\/stop(?:@\w+)?$/i, runSafely(async (msg) => {
     if (!msg.from) return;
     const userId = Number(msg.from.id);
-    await touchUser(userId);
+    await touchUser(userId, msg.from);
     if (await isBanned(userId)) {
       await enforceBanState(userId, { notifySelf: true, selfChatId: msg.chat.id });
       return;
@@ -400,7 +400,7 @@ function startMainBot() {
   bot.onText(/^\/next(?:@\w+)?$/i, runSafely(async (msg) => {
     if (!msg.from) return;
     const userId = Number(msg.from.id);
-    await touchUser(userId);
+    await touchUser(userId, msg.from);
     if (await isBanned(userId)) {
       await enforceBanState(userId, { notifySelf: true, selfChatId: msg.chat.id });
       return;
@@ -419,7 +419,7 @@ function startMainBot() {
   bot.onText(/^\/report(?:@\w+)?$/i, runSafely(async (msg) => {
     if (!msg.from) return;
     const userId = Number(msg.from.id);
-    await touchUser(userId);
+    await touchUser(userId, msg.from);
     if (await isBanned(userId)) {
       await enforceBanState(userId, { notifySelf: true, selfChatId: msg.chat.id });
       return;
@@ -661,7 +661,7 @@ function startMainBot() {
 
   bot.on('message', runSafely(async (msg) => {
     if (!msg.from || !msg.chat || msg.chat.type !== 'private') return;
-    await touchUser(Number(msg.from.id));
+    await touchUser(Number(msg.from.id), msg.from);
     if (msg.text && msg.text.startsWith('/')) return;
     await forwardAnonymousMessage(msg);
   }));

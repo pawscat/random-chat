@@ -157,11 +157,13 @@ async function loadUsers(type = 'all') {
         ? `<button class="action-btn unban-btn" onclick="userAction('unban', ${u.user_id || u.userId})">Unban</button>`
         : `<button class="action-btn ban-btn" onclick="userAction('ban', ${u.user_id || u.userId})">Ban</button>`;
       const lastActive = timeAgo(u.last_active || u.lastActive);
-      const username = u.username ? `@${u.username}` : '—';
+      const fullName = [u.first_name || u.firstName, u.last_name || u.lastName].filter(Boolean).join(' ') || 'Tanpa Nama';
+      const username = u.username ? `<br><small style="color:var(--accent-blue)">@${u.username}</small>` : '';
+      const profileInfo = `<div>${fullName}${username}</div>`;
 
       return `<tr>
         <td><strong>${u.user_id || u.userId || '—'}</strong></td>
-        <td>${username}</td>
+        <td>${profileInfo}</td>
         <td>${statusBadge}</td>
         <td>${lastActive}</td>
         <td>${actionBtn}</td>

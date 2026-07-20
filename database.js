@@ -120,15 +120,32 @@ async function initDB() {
     CREATE INDEX IF NOT EXISTS idx_admin_actions_admin_id ON admin_actions(admin_id);
     CREATE INDEX IF NOT EXISTS idx_admin_actions_created_at ON admin_actions(created_at);
   `);
+
+  // Migration: tambah kolom profil user
+  const migrations = [
+    "ALTER TABLE users ADD COLUMN username TEXT",
+    "ALTER TABLE users ADD COLUMN first_name TEXT",
+    "ALTER TABLE users ADD COLUMN last_name TEXT",
+    "ALTER TABLE users ADD COLUMN language_code TEXT"
+  ];
+  for (const sql of migrations) {
+    try { await client.execute(sql); } catch (e) {
+      // Kolom sudah ada, abaikan error
+    }
+  }
 }
 initDB().catch(console.error);
 
 const queries = {
   upsertUser: `
-    INSERT INTO users (user_id, status, joined_at, last_active)
-    VALUES (?, 'idle', ?, ?)
+    INSERT INTO users (user_id, status, joined_at, last_active, username, first_name, last_name, language_code)
+    VALUES (?, 'idle', ?, ?, ?, ?, ?, ?)
     ON CONFLICT(user_id) DO UPDATE SET
-      last_active = excluded.last_active
+      last_active = excluded.last_active,
+      username = COALESCE(excluded.username, users.username),
+      first_name = COALESCE(excluded.first_name, users.first_name),
+      last_name = COALESCE(excluded.last_name, users.last_name),
+      language_code = COALESCE(excluded.language_code, users.language_code)
     RETURNING *
   `,
   getUser: 'SELECT * FROM users WHERE user_id = ?',
@@ -137,14 +154,14 @@ const queries = {
 
   countUsers: 'SELECT COUNT(*) AS total FROM users',
   listUsers: `
-    SELECT user_id, status, joined_at, last_active, is_banned, banned_at, banned_by, ban_reason
+    SELECT user_id, username, first_name, last_name, language_code, status, joined_at, last_active, is_banned, banned_at, banned_by, ban_reason
     FROM users
     ORDER BY joined_at ASC
     LIMIT ? OFFSET ?
   `,
   countActiveUsers: 'SELECT COUNT(*) AS total FROM users WHERE last_active >= ?',
   listActiveUsers: `
-    SELECT user_id, status, joined_at, last_active, is_banned
+    SELECT user_id, username, first_name, last_name, status, joined_at, last_active, is_banned
     FROM users
     WHERE last_active >= ?
     ORDER BY last_active DESC
@@ -152,7 +169,7 @@ const queries = {
   `,
   countWaitingUsers: 'SELECT COUNT(*) AS total FROM waiting_queue',
   listWaitingUsers: `
-    SELECT w.user_id, w.queued_at, u.status, u.last_active, u.is_banned
+    SELECT w.user_id, w.queued_at, u.username, u.first_name, u.last_name, u.status, u.last_active, u.is_banned
     FROM waiting_queue w
     JOIN users u ON u.user_id = w.user_id
     ORDER BY w.queued_at ASC
@@ -160,7 +177,7 @@ const queries = {
   `,
   countChattingUsers: "SELECT COUNT(*) AS total FROM users WHERE status = 'chatting'",
   listChattingUsers: `
-    SELECT user_id, status, last_active
+    SELECT user_id, username, first_name, last_name, status, last_active
     FROM users
     WHERE status = 'chatting'
     ORDER BY last_active DESC
@@ -391,10 +408,14 @@ function withPagination(rows, total, page, limit) {
   return { page, limit, total, totalPages, items: rows };
 }
 
-async function upsertUser(userId) {
+async function upsertUser(userId, profile) {
   const uid = Number(userId);
   const now = Date.now();
-  const res = await client.execute({ sql: queries.upsertUser, args: [uid, now, now] });
+  const username = profile?.username || null;
+  const firstName = profile?.first_name || null;
+  const lastName = profile?.last_name || null;
+  const languageCode = profile?.language_code || null;
+  const res = await client.execute({ sql: queries.upsertUser, args: [uid, now, now, username, firstName, lastName, languageCode] });
   return res.rows[0] || null;
 }
 
@@ -564,8 +585,8 @@ async function createChatPair(userA, userB) {
   const now = Date.now();
   const tx = await client.transaction('write');
   try {
-    await tx.execute({ sql: queries.upsertUser, args: [a, now, now] });
-    await tx.execute({ sql: queries.upsertUser, args: [b, now, now] });
+    await tx.execute({ sql: queries.upsertUser, args: [a, now, now, null, null, null, null] });
+    await tx.execute({ sql: queries.upsertUser, args: [b, now, now, null, null, null, null] });
     await tx.execute({ sql: queries.removeFromWaitingQueue, args: [a] });
     await tx.execute({ sql: queries.removeFromWaitingQueue, args: [b] });
     await tx.execute({ sql: queries.upsertChatPair, args: [a, b, now] });
