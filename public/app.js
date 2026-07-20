@@ -557,12 +557,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Auto-refresh Logic
   let refreshIntervalId = null;
+  const savedRefreshInterval = localStorage.getItem('autoRefreshInterval');
 
-  function updateAutoRefresh() {
+  function updateAutoRefresh(saveToStorage = true) {
     if (refreshIntervalId) clearInterval(refreshIntervalId);
 
     const overviewSelect = $('#auto-refresh-overview');
     const interval = Number(overviewSelect ? overviewSelect.value : 30000);
+    
+    if (saveToStorage) {
+      localStorage.setItem('autoRefreshInterval', interval.toString());
+    }
 
     if (interval > 0) {
       refreshIntervalId = setInterval(() => {
@@ -576,21 +581,26 @@ document.addEventListener('DOMContentLoaded', () => {
   const overviewSelect = $('#auto-refresh-overview');
   const serverSelect = $('#auto-refresh-server');
 
+  if (savedRefreshInterval) {
+    if (overviewSelect) overviewSelect.value = savedRefreshInterval;
+    if (serverSelect) serverSelect.value = savedRefreshInterval;
+  }
+
   if (overviewSelect) {
     overviewSelect.addEventListener('change', (e) => {
       if (serverSelect) serverSelect.value = e.target.value;
-      updateAutoRefresh();
+      updateAutoRefresh(true);
     });
   }
 
   if (serverSelect) {
     serverSelect.addEventListener('change', (e) => {
       if (overviewSelect) overviewSelect.value = e.target.value;
-      updateAutoRefresh();
+      updateAutoRefresh(true);
     });
   }
 
-  updateAutoRefresh();
+  updateAutoRefresh(false);
 });
 
 // ===================== SESSIONS =====================
