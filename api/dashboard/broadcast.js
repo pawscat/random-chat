@@ -66,6 +66,13 @@ module.exports = async (req, res) => {
       return res.status(200).json({ success: true, message: `Siaran dijadwalkan ke ${totalTarget} pengguna.` });
     }
 
+    if (req.method === 'GET') {
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 20;
+      const history = await database.listBroadcastJobs(page, limit);
+      return res.status(200).json({ success: true, history });
+    }
+
     return res.status(405).json({ error: 'Method Not Allowed' });
   } catch (err) {
     console.error('Broadcast API error:', err);

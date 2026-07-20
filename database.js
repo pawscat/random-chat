@@ -400,6 +400,12 @@ const queries = {
   `,
   finishBroadcastJob: `
     UPDATE broadcast_jobs SET status = 'completed' WHERE id = ?
+  `,
+  listBroadcastJobs: `
+    SELECT * FROM broadcast_jobs ORDER BY created_at DESC LIMIT ? OFFSET ?
+  `,
+  countBroadcastJobs: `
+    SELECT COUNT(*) as total FROM broadcast_jobs
   `
 };
 
@@ -966,7 +972,7 @@ async function updateBroadcastJobProgress(jobId, success, fail, skipped, page) {
 }
 
 async function finishBroadcastJob(jobId) {
-  await client.execute({ sql: queries.finishBroadcastJob, args: [Number(jobId)] });
+  await client.execute({ sql: queries.updateBroadcastJobProgress, finishBroadcastJob, args: [Number(jobId)] });
 }
 
 module.exports = {
@@ -981,6 +987,13 @@ module.exports = {
   countReportsByUser, countReportsAgainstUser, canCreateReport, recordReportCreated,
   resetReportWindowIfNeeded, logAdminAction, logBroadcast, listBroadcastTargets,
   getReportStep, setReportStep, deleteReportStep, getMessageRateLimit, setMessageRateLimit,
-  getRuntimeState, setRuntimeState, createBroadcastJob, getBroadcastJob, updateBroadcastJobProgress,
-  finishBroadcastJob, generateReportId, deleteUser
+  getRuntimeState, setRuntimeState, createBroadcastJob, getBroadcastJob, finishBroadcastJob,
+  listBroadcastJobs, generateReportId, deleteUser
 };
+async function listBroadcastJobs(page = 1, limit = 20) {
+  const { safePage, safeLimit, offset } = normalizePagination(page, limit);
+  const countRes = await client.execute(queries.countBroadcastJobs);
+  const total = countRes.rows[0]?.total || 0;
+  const res = await client.execute({ sql: queries.listBroadcastJobs, args: [safeLimit, offset] });
+  return withPagination(res.rows, total, safePage, safeLimit);
+}

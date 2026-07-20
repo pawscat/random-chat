@@ -406,6 +406,10 @@ function switchPage(pageName) {
     loadSessions(activeFilter ? activeFilter.dataset.sessionFilter : 'active');
   }
 
+  if (pageName === 'broadcast') {
+    loadBroadcastHistory();
+  }
+
   // Close mobile sidebar
   closeMobileSidebar();
 }
@@ -713,6 +717,7 @@ async function sendBroadcast() {
     if (data.success) {
       showToast(data.message, 'success');
       msgInput.value = '';
+      loadBroadcastHistory();
     } else {
       showToast(data.error || 'Gagal mengirim siaran.', 'error');
     }
@@ -724,3 +729,36 @@ async function sendBroadcast() {
   }
 }
 window.sendBroadcast = sendBroadcast;
+
+async function loadBroadcastHistory() {
+  try {
+    const data = await apiGet('broadcast');
+    if (!data.success) return;
+
+    const tbody = $('#broadcast-history-body');
+    if (!data.history || !data.history.items || data.history.items.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="table-empty">Belum ada riwayat siaran.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = data.history.items.map((i, index) => {
+      const time = new Date(i.created_at || i.createdAt).toLocaleString('id-ID');
+      let statusBadge = `<span class="badge" style="background:#4b5563;color:white">${i.status}</span>`;
+      if (i.status === 'running' || i.status === 'processing') statusBadge = `<span class="badge" style="background:var(--accent-blue);color:white">Berjalan</span>`;
+      if (i.status === 'completed') statusBadge = `<span class="badge" style="background:var(--accent-green);color:white">Selesai</span>`;
+
+      return `<tr style="animation-delay: ${index * 0.05}s">
+        <td><strong>#${i.id}</strong></td>
+        <td>${time}</td>
+        <td style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${i.message}">${i.message}</td>
+        <td>${i.total_target}</td>
+        <td>${statusBadge}</td>
+        <td style="color:var(--accent-green)">${i.success_count}</td>
+        <td style="color:var(--accent-rose)">${i.fail_count}</td>
+      </tr>`;
+    }).join('');
+  } catch (err) {
+    console.error('loadBroadcastHistory error:', err);
+  }
+}
+

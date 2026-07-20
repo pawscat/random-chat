@@ -299,6 +299,28 @@
             </div>
             <button id="send-broadcast-btn" class="action-btn ban-btn" style="background:var(--accent-blue); width:auto; margin-top:10px;" onclick="sendBroadcast()">🚀 Kirim Siaran Sekarang</button>
           </div>
+          
+          <div class="settings-card" style="grid-column: 1 / -1; margin-top: 20px;">
+            <h3>🕒 Riwayat Siaran</h3>
+            <div class="table-container" style="margin-top: 15px;">
+              <table class="data-table users-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Waktu</th>
+                    <th>Pesan</th>
+                    <th>Target</th>
+                    <th>Status</th>
+                    <th>Berhasil</th>
+                    <th>Gagal</th>
+                  </tr>
+                </thead>
+                <tbody id="broadcast-history-body">
+                  <tr><td colspan="7" class="table-empty">Memuat riwayat...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </section>
 
