@@ -551,12 +551,42 @@ document.addEventListener('DOMContentLoaded', () => {
     loadDashboard();
   }
 
-  // Auto-refresh every 30 seconds
-  setInterval(() => {
-    if (authToken && $('#page-overview').classList.contains('active')) {
-      loadStats();
+  // Auto-refresh Logic
+  let refreshIntervalId = null;
+
+  function updateAutoRefresh() {
+    if (refreshIntervalId) clearInterval(refreshIntervalId);
+
+    const overviewSelect = $('#auto-refresh-overview');
+    const interval = Number(overviewSelect ? overviewSelect.value : 30000);
+
+    if (interval > 0) {
+      refreshIntervalId = setInterval(() => {
+        if (authToken && ($('#page-overview').classList.contains('active') || $('#page-server').classList.contains('active'))) {
+          loadStats();
+        }
+      }, interval);
     }
-  }, 30000);
+  }
+
+  const overviewSelect = $('#auto-refresh-overview');
+  const serverSelect = $('#auto-refresh-server');
+
+  if (overviewSelect) {
+    overviewSelect.addEventListener('change', (e) => {
+      if (serverSelect) serverSelect.value = e.target.value;
+      updateAutoRefresh();
+    });
+  }
+
+  if (serverSelect) {
+    serverSelect.addEventListener('change', (e) => {
+      if (overviewSelect) overviewSelect.value = e.target.value;
+      updateAutoRefresh();
+    });
+  }
+
+  updateAutoRefresh();
 });
 
 // ===================== SESSIONS =====================
