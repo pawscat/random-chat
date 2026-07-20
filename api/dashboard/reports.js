@@ -98,6 +98,17 @@ module.exports = async (req, res) => {
         if (banRes.ok) return res.json({ success: true, message: 'Terlapor berhasil di-ban', report: banRes.report });
         return res.status(400).json({ error: 'Gagal memproses. Alasan: ' + banRes.reason });
       }
+      if (action === 'reject') {
+        const rejectRes = await database.rejectReport(reportId, adminId, note || 'Ditolak via Web Dashboard');
+        if (rejectRes.ok) return res.json({ success: true, message: 'Laporan ditolak', report: rejectRes.report });
+        return res.status(400).json({ error: 'Gagal menolak laporan. Alasan: ' + rejectRes.reason });
+      }
+
+      if (action === 'delete') {
+        const delRes = await database.deleteReport(reportId);
+        if (delRes.ok) return res.json({ success: true, message: 'Laporan berhasil dihapus permanen' });
+        return res.status(400).json({ error: 'Gagal menghapus laporan' });
+      }
       
       return res.status(400).json({ error: 'Invalid action' });
     }

@@ -327,6 +327,13 @@ const queries = {
   markReportBanned: `
     UPDATE reports SET status = 'banned', handled_by_admin_id = ?, handled_at = ?, admin_note = ? WHERE report_id = ?
   `,
+  deleteReport: 'DELETE FROM reports WHERE report_id = ?',
+  deleteUser: 'DELETE FROM users WHERE user_id = ?',
+  deleteUserChat: 'DELETE FROM active_chats WHERE user_id = ? OR partner_id = ?',
+  deleteUserWaiting: 'DELETE FROM waiting_queue WHERE user_id = ?',
+  deleteUserMsgLimit: 'DELETE FROM message_rate_limits WHERE user_id = ?',
+  deleteUserRepLimit: 'DELETE FROM report_rate_limits WHERE user_id = ?',
+  deleteUserRepStep: 'DELETE FROM report_draft_steps WHERE user_id = ?',
   groupedReportStatus: 'SELECT status, COUNT(*) AS total FROM reports GROUP BY status',
   countOpenReportsByUser: `
     SELECT COUNT(*) AS total FROM reports WHERE reporter_id = ? AND status IN ('pending_evidence', 'submitted', 'under_review')
@@ -789,6 +796,37 @@ async function markReportBanned(reportId, adminId, reason) {
   return { ok: true, report: await getReport(rid) };
 }
 
+async function deleteReport(reportId) {
+  const rid = String(reportId);
+  const tx = await client.transaction('write');
+  try {
+    await tx.execute({ sql: queries.deleteReport, args: [rid] });
+    await tx.commit();
+    return { ok: true };
+  } catch (e) {
+    await tx.rollback();
+    throw e;
+  }
+}
+
+async function deleteUser(userId) {
+  const uid = Number(userId);
+  const tx = await client.transaction('write');
+  try {
+    await tx.execute({ sql: queries.deleteUser, args: [uid] });
+    await tx.execute({ sql: queries.deleteUserChat, args: [uid, uid] });
+    await tx.execute({ sql: queries.deleteUserWaiting, args: [uid] });
+    await tx.execute({ sql: queries.deleteUserMsgLimit, args: [uid] });
+    await tx.execute({ sql: queries.deleteUserRepLimit, args: [uid] });
+    await tx.execute({ sql: queries.deleteUserRepStep, args: [uid] });
+    await tx.commit();
+    return { ok: true };
+  } catch (e) {
+    await tx.rollback();
+    throw e;
+  }
+}
+
 async function countReportsByStatusMap() {
   const res = await client.execute(queries.groupedReportStatus);
   const output = { pending_evidence: 0, submitted: 0, under_review: 0, resolved: 0, rejected: 0, banned: 0 };
@@ -939,10 +977,10 @@ module.exports = {
   listChatPairs, createReport, getReport, updateReportEvidence, updateReportDescription,
   updateReportViolationType, submitReport, listReportsByStatus, listReportsByReporter,
   listClaimedReportsByAdmin, listReportsByStatuses, getNextSubmittedReport, claimReport, releaseReport,
-  resolveReport, rejectReport, markReportBanned, countReportsByStatus: countReportsByStatusMap,
+  resolveReport, rejectReport, markReportBanned, deleteReport, countReportsByStatus: countReportsByStatusMap,
   countReportsByUser, countReportsAgainstUser, canCreateReport, recordReportCreated,
   resetReportWindowIfNeeded, logAdminAction, logBroadcast, listBroadcastTargets,
   getReportStep, setReportStep, deleteReportStep, getMessageRateLimit, setMessageRateLimit,
   getRuntimeState, setRuntimeState, createBroadcastJob, getBroadcastJob, updateBroadcastJobProgress,
-  finishBroadcastJob, generateReportId
+  finishBroadcastJob, generateReportId, deleteUser
 };

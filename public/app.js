@@ -166,8 +166,10 @@ async function loadUsers(type = 'all') {
         }
       }
       const actionBtn = isBanned
-        ? `<button class="action-btn unban-btn" onclick="userAction('unban', ${u.user_id || u.userId})">Unban</button>`
-        : `<button class="action-btn ban-btn" onclick="userAction('ban', ${u.user_id || u.userId})">Ban</button>`;
+        ? `<button class="action-btn unban-btn" onclick="userAction('unban', ${u.user_id || u.userId})">Unban</button>
+           <button class="action-btn ban-btn" style="background:var(--accent-rose)" onclick="userAction('delete', ${u.user_id || u.userId})">Hapus</button>`
+        : `<button class="action-btn ban-btn" onclick="userAction('ban', ${u.user_id || u.userId})">Ban</button>
+           <button class="action-btn ban-btn" style="background:var(--accent-rose)" onclick="userAction('delete', ${u.user_id || u.userId})">Hapus</button>`;
       const lastActive = timeAgo(u.last_active || u.lastActive);
       const fullName = [u.first_name || u.firstName, u.last_name || u.lastName].filter(Boolean).join(' ') || 'Tanpa Nama';
       const username = u.username ? `<br><small style="color:var(--accent-blue)">@${u.username}</small>` : '';
@@ -219,12 +221,18 @@ async function loadReports(type = 'pending') {
       
       let actionHtml = '';
       if (r.status === 'submitted') {
-        actionHtml = `<button class="action-btn" style="border-color:var(--accent-blue);color:var(--accent-blue)" onclick="reportAction('claim', '${r.report_id}')">Claim Laporan</button>`;
+        actionHtml = `<button class="action-btn" style="border-color:var(--accent-blue);color:var(--accent-blue)" onclick="reportAction('claim', '${r.report_id}')">Claim Laporan</button>
+                      <button class="action-btn" style="border-color:var(--accent-rose);color:var(--accent-rose)" onclick="reportAction('reject', '${r.report_id}')">Tolak</button>
+                      <button class="action-btn" style="background:var(--accent-rose);color:white" onclick="reportAction('delete', '${r.report_id}')">Hapus</button>`;
       } else if (r.status === 'under_review') {
         actionHtml = `
           <button class="action-btn" style="border-color:var(--accent-green);color:var(--accent-green)" onclick="reportAction('resolve', '${r.report_id}')">Tandai Selesai</button>
           <button class="action-btn" style="border-color:var(--accent-rose);color:var(--accent-rose)" onclick="reportAction('ban', '${r.report_id}')">Ban Terlapor</button>
+          <button class="action-btn" style="border-color:var(--accent-rose);color:var(--accent-rose)" onclick="reportAction('reject', '${r.report_id}')">Tolak</button>
+          <button class="action-btn" style="background:var(--accent-rose);color:white" onclick="reportAction('delete', '${r.report_id}')">Hapus</button>
         `;
+      } else {
+        actionHtml = `<button class="action-btn" style="background:var(--accent-rose);color:white" onclick="reportAction('delete', '${r.report_id}')">Hapus Permanen</button>`;
       }
 
       return `
@@ -252,9 +260,13 @@ async function loadReports(type = 'pending') {
 }
 
 async function reportAction(action, reportId) {
-  const confirmMsg = action === 'ban' ? 'Yakin ingin mem-ban terlapor dari laporan ini?' : 
-                     action === 'resolve' ? 'Yakin menandai laporan ini sudah selesai?' : 
-                     'Klaim laporan ini untuk ditinjau?';
+  let confirmMsg = '';
+  if (action === 'ban') confirmMsg = 'Yakin ingin mem-ban terlapor dari laporan ini?';
+  else if (action === 'resolve') confirmMsg = 'Yakin menandai laporan ini sudah selesai?';
+  else if (action === 'reject') confirmMsg = 'Yakin menolak laporan ini?';
+  else if (action === 'delete') confirmMsg = 'PERINGATAN: Hapus laporan secara permanen dari database?';
+  else confirmMsg = 'Klaim laporan ini untuk ditinjau?';
+  
   if (!confirm(confirmMsg)) return;
 
   try {
@@ -334,9 +346,10 @@ window.saveSettings = saveSettings;
 // ===================== USER ACTIONS =====================
 
 async function userAction(action, userId) {
-  const confirmMsg = action === 'ban'
-    ? `Apakah Anda yakin ingin mem-ban user ${userId}?`
-    : `Apakah Anda yakin ingin meng-unban user ${userId}?`;
+  let confirmMsg = '';
+  if (action === 'ban') confirmMsg = `Apakah Anda yakin ingin mem-ban user ${userId}?`;
+  else if (action === 'unban') confirmMsg = `Apakah Anda yakin ingin meng-unban user ${userId}?`;
+  else if (action === 'delete') confirmMsg = `PERINGATAN: Hapus permanen user ${userId} beserta histori chat/antreannya?`;
 
   if (!confirm(confirmMsg)) return;
 
@@ -371,10 +384,19 @@ function switchPage(pageName) {
   if (page) page.classList.add('active');
   if (link) link.classList.add('active');
 
-  // Load data for specific pages
   if (pageName === 'users') loadUsers();
   if (pageName === 'server') loadStats();
   if (pageName === 'settings') loadSettings();
+  
+  if (pageName === 'reports') {
+    const activeFilter = $('.filter-btn[id^="filter-report-"].active');
+    loadReports(activeFilter ? activeFilter.dataset.reportFilter : 'pending');
+  }
+  
+  if (pageName === 'sessions') {
+    const activeFilter = $('.filter-btn[id^="filter-session-"].active');
+    loadSessions(activeFilter ? activeFilter.dataset.sessionFilter : 'active');
+  }
 
   // Close mobile sidebar
   closeMobileSidebar();
@@ -430,10 +452,6 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const page = link.dataset.page;
       switchPage(page);
-      if (page === 'reports') {
-        const activeFilter = $('.filter-btn[id^="filter-report-"].active');
-        loadReports(activeFilter ? activeFilter.dataset.reportFilter : 'pending');
-      }
     });
   });
 
@@ -479,6 +497,15 @@ document.addEventListener('DOMContentLoaded', () => {
       $$('.filter-btn[id^="filter-report-"]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       loadReports(btn.dataset.reportFilter);
+    });
+  });
+
+  // Session filter buttons
+  $$('.filter-btn[id^="filter-session-"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $$('.filter-btn[id^="filter-session-"]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadSessions(btn.dataset.sessionFilter);
     });
   });
 
@@ -531,3 +558,117 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, 30000);
 });
+
+// ===================== SESSIONS =====================
+
+async function loadSessions(type = 'active') {
+  try {
+    const data = await apiGet(`sessions?type=${type}`);
+    if (!data.success) return;
+
+    const tbody = $('#sessions-table-body');
+    const thead = $('#sessions-table-head');
+    
+    if (type === 'active') {
+      thead.innerHTML = `
+        <th>User A</th>
+        <th>User B</th>
+        <th>Waktu Mulai</th>
+        <th>Aksi</th>
+      `;
+    } else {
+      thead.innerHTML = `
+        <th>User ID</th>
+        <th>Profil</th>
+        <th>Waktu Masuk Antrean</th>
+        <th>Aksi</th>
+      `;
+    }
+
+    if (!data.items || data.items.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" class="table-empty">Tidak ada data.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data.items.map(i => {
+      if (type === 'active') {
+        const time = new Date(i.started_at || i.startedAt).toLocaleString('id-ID');
+        return `<tr>
+          <td>${i.user_id}</td>
+          <td>${i.partner_id}</td>
+          <td>${time}</td>
+          <td><button class="action-btn" style="background:var(--accent-rose);color:white" onclick="sessionAction('stop_chat', ${i.user_id})">Putuskan Chat</button></td>
+        </tr>`;
+      } else {
+        const time = new Date(i.queued_at || i.queuedAt).toLocaleString('id-ID');
+        const fullName = [i.first_name || i.firstName, i.last_name || i.lastName].filter(Boolean).join(' ') || 'Tanpa Nama';
+        const username = i.username ? `<br><small style="color:var(--accent-blue)">@${i.username}</small>` : '';
+        const profileInfo = `<div>${fullName}${username}</div>`;
+        return `<tr>
+          <td><strong>${i.user_id}</strong></td>
+          <td>${profileInfo}</td>
+          <td>${time}</td>
+          <td><button class="action-btn" style="background:var(--accent-rose);color:white" onclick="sessionAction('kick_queue', ${i.user_id})">Keluarkan</button></td>
+        </tr>`;
+      }
+    }).join('');
+  } catch (err) {
+    console.error('loadSessions error:', err);
+  }
+}
+window.loadSessions = loadSessions;
+
+async function sessionAction(action, userId) {
+  const confirmMsg = action === 'stop_chat' ? 'Yakin memaksa menghentikan chat mereka?' : 'Yakin mengeluarkan user ini dari antrean?';
+  if (!confirm(confirmMsg)) return;
+
+  try {
+    const data = await apiPost('sessions', { action, userId });
+    if (data.success) {
+      showToast(data.message, 'success');
+      const activeFilter = $('.filter-btn[id^="filter-session-"].active');
+      loadSessions(activeFilter ? activeFilter.dataset.sessionFilter : 'active');
+      loadStats();
+    } else {
+      showToast(data.error || 'Gagal memproses sesi.', 'error');
+    }
+  } catch (err) {
+    showToast('Terjadi kesalahan.', 'error');
+  }
+}
+window.sessionAction = sessionAction;
+
+
+// ===================== BROADCAST =====================
+
+async function sendBroadcast() {
+  const msgInput = $('#broadcast-message');
+  const message = msgInput.value.trim();
+  if (!message) {
+    showToast('Pesan tidak boleh kosong!', 'error');
+    return;
+  }
+
+  if (!confirm('Peringatan: Pesan ini akan dikirim ke seluruh pengguna yang aktif. Lanjutkan?')) return;
+
+  const btn = $('#send-broadcast-btn');
+  const originalText = btn.innerHTML;
+  btn.innerHTML = 'Mempersiapkan Siaran...';
+  btn.disabled = true;
+
+  try {
+    const data = await apiPost('broadcast', { message });
+    if (data.success) {
+      showToast(data.message, 'success');
+      msgInput.value = '';
+    } else {
+      showToast(data.error || 'Gagal mengirim siaran.', 'error');
+    }
+  } catch (err) {
+    showToast('Terjadi kesalahan.', 'error');
+  } finally {
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+  }
+}
+window.sendBroadcast = sendBroadcast;

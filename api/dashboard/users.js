@@ -61,6 +61,9 @@ module.exports = async (req, res) => {
         case 'unban':
           await database.unbanUser(numericUserId);
           return res.status(200).json({ success: true, message: `User ${numericUserId} telah di-unban.` });
+        case 'delete':
+          await database.deleteUser(numericUserId);
+          return res.status(200).json({ success: true, message: `User ${numericUserId} telah dihapus permanen.` });
         case 'info':
           const info = await database.getUserInfo(numericUserId);
           return res.status(200).json({ success: true, user: info });

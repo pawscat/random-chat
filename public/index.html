@@ -54,6 +54,12 @@
         <li><a href="#" class="nav-link" data-page="reports" id="nav-reports">
           <span class="nav-icon">📋</span> Laporan
         </a></li>
+        <li><a href="#" class="nav-link" data-page="sessions" id="nav-sessions">
+          <span class="nav-icon">💬</span> Sesi & Antrean
+        </a></li>
+        <li><a href="#" class="nav-link" data-page="broadcast" id="nav-broadcast">
+          <span class="nav-icon">📢</span> Siaran
+        </a></li>
         <li><a href="#" class="nav-link" data-page="settings" id="nav-settings">
           <span class="nav-icon">⚙️</span> Settings
         </a></li>
@@ -226,6 +232,49 @@
         <div id="reports-container" class="reports-container">
           <!-- Dinamis dari JS -->
           <div class="table-empty">Memuat data...</div>
+        </div>
+      </section>
+
+      <!-- Sessions Page -->
+      <section id="page-sessions" class="page">
+        <div class="page-header">
+          <h1>Sesi & Antrean</h1>
+        </div>
+        <div class="users-toolbar">
+          <div class="filter-group">
+            <button class="filter-btn active" data-session-filter="active" id="filter-session-active">Chat Aktif</button>
+            <button class="filter-btn" data-session-filter="waiting" id="filter-session-waiting">Antrean</button>
+          </div>
+        </div>
+        
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr id="sessions-table-head">
+                <!-- Dinamis -->
+              </tr>
+            </thead>
+            <tbody id="sessions-table-body">
+              <tr><td colspan="5" class="table-empty">Memuat data...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Broadcast Page -->
+      <section id="page-broadcast" class="page">
+        <div class="page-header">
+          <h1>Siaran Ke Semua Pengguna</h1>
+        </div>
+        <div class="settings-grid">
+          <div class="settings-card" style="grid-column: 1 / -1;">
+            <h3>📢 Kirim Pesan Siaran (Broadcast)</h3>
+            <p style="margin-bottom: 15px; color: var(--text-secondary);">Pesan akan dikirim ke seluruh pengguna yang tidak dibanned secara bertahap.</p>
+            <div class="settings-item" style="flex-direction: column; align-items: stretch; gap: 10px;">
+              <textarea class="settings-input" id="broadcast-message" rows="6" placeholder="Ketik pesan siaran di sini... Mendukung formatting Telegram (HTML/Markdown)" style="resize: vertical;"></textarea>
+            </div>
+            <button id="send-broadcast-btn" class="action-btn ban-btn" style="background:var(--accent-blue); width:auto; margin-top:10px;" onclick="sendBroadcast()">🚀 Kirim Siaran Sekarang</button>
+          </div>
         </div>
       </section>
 
