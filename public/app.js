@@ -150,9 +150,21 @@ async function loadUsers(type = 'all') {
 
     tbody.innerHTML = data.users.map(u => {
       const isBanned = u.is_banned === 1 || u.banned === 1;
-      const statusBadge = isBanned
-        ? '<span class="badge badge-banned">Banned</span>'
-        : '<span class="badge badge-active">Aktif</span>';
+      let statusBadge = '';
+      if (isBanned) {
+        statusBadge = '<span class="badge badge-banned">Banned</span>';
+      } else {
+        const isActive = (Date.now() - (u.last_active || u.lastActive)) < 5 * 60 * 1000;
+        if (u.status === 'chatting') {
+          statusBadge = '<span class="badge" style="background:var(--accent-blue);color:white">Chatting</span>';
+        } else if (u.status === 'waiting') {
+          statusBadge = '<span class="badge" style="background:var(--accent-purple);color:white">Mencari</span>';
+        } else if (isActive) {
+          statusBadge = '<span class="badge badge-active">Online</span>';
+        } else {
+          statusBadge = '<span class="badge" style="background:#4b5563;color:white">Offline</span>';
+        }
+      }
       const actionBtn = isBanned
         ? `<button class="action-btn unban-btn" onclick="userAction('unban', ${u.user_id || u.userId})">Unban</button>`
         : `<button class="action-btn ban-btn" onclick="userAction('ban', ${u.user_id || u.userId})">Ban</button>`;
