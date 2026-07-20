@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Random Chat — Admin Dashboard</title>
+  <meta name="description" content="Admin Dashboard untuk memantau dan mengelola bot Random Chat Telegram.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <!-- LOGIN SCREEN -->
+  <div id="login-screen" class="login-screen">
+    <div class="login-card">
+      <div class="login-icon">🤖</div>
+      <h1>Random Chat</h1>
+      <p class="login-subtitle">Admin Dashboard</p>
+      <form id="login-form">
+        <div class="input-group">
+          <input type="password" id="login-password" placeholder="Masukkan password..." autocomplete="current-password" required>
+          <button type="submit" id="login-btn">
+            <span class="btn-text">Masuk</span>
+            <span class="btn-loader" style="display:none;">⏳</span>
+          </button>
+        </div>
+        <p id="login-error" class="login-error"></p>
+      </form>
+    </div>
+    <div class="login-particles"></div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="dashboard" style="display:none;">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">🤖</div>
+        <h2>Random Chat</h2>
+        <span class="sidebar-badge">ADMIN</span>
+      </div>
+      <ul class="sidebar-nav">
+        <li><a href="#" class="nav-link active" data-page="overview" id="nav-overview">
+          <span class="nav-icon">📊</span> Overview
+        </a></li>
+        <li><a href="#" class="nav-link" data-page="users" id="nav-users">
+          <span class="nav-icon">👥</span> Users
+        </a></li>
+        <li><a href="#" class="nav-link" data-page="server" id="nav-server">
+          <span class="nav-icon">🖥️</span> Server
+        </a></li>
+        <li><a href="#" class="nav-link" data-page="settings" id="nav-settings">
+          <span class="nav-icon">⚙️</span> Settings
+        </a></li>
+      </ul>
+      <div class="sidebar-footer">
+        <button id="logout-btn" class="logout-btn">🚪 Logout</button>
+      </div>
+    </nav>
+
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+      <button id="menu-toggle" class="menu-toggle">☰</button>
+      <h2>🤖 Random Chat</h2>
+      <button id="mobile-logout" class="mobile-logout">🚪</button>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+      <!-- Overview Page -->
+      <section id="page-overview" class="page active">
+        <div class="page-header">
+          <h1>Overview</h1>
+          <div class="header-actions">
+            <span id="last-updated" class="last-updated"></span>
+            <button id="refresh-btn" class="refresh-btn" title="Refresh">🔄</button>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card stat-primary" id="stat-total-users">
+            <div class="stat-icon">👥</div>
+            <div class="stat-info">
+              <span class="stat-value">—</span>
+              <span class="stat-label">Total Users</span>
+            </div>
+          </div>
+          <div class="stat-card stat-success" id="stat-active-users">
+            <div class="stat-icon">✅</div>
+            <div class="stat-info">
+              <span class="stat-value">—</span>
+              <span class="stat-label">Aktif</span>
+            </div>
+          </div>
+          <div class="stat-card stat-warning" id="stat-waiting">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-info">
+              <span class="stat-value">—</span>
+              <span class="stat-label">Menunggu</span>
+            </div>
+          </div>
+          <div class="stat-card stat-info" id="stat-chatting">
+            <div class="stat-icon">💬</div>
+            <div class="stat-info">
+              <span class="stat-value">—</span>
+              <span class="stat-label">Sedang Chat</span>
+            </div>
+          </div>
+          <div class="stat-card stat-danger" id="stat-banned">
+            <div class="stat-icon">🚫</div>
+            <div class="stat-info">
+              <span class="stat-value">—</span>
+              <span class="stat-label">Banned</span>
+            </div>
+          </div>
+          <div class="stat-card stat-report" id="stat-reports">
+            <div class="stat-icon">📋</div>
+            <div class="stat-info">
+              <span class="stat-value">—</span>
+              <span class="stat-label">Laporan Pending</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Users Page -->
+      <section id="page-users" class="page">
+        <div class="page-header">
+          <h1>Manajemen Users</h1>
+        </div>
+        <div class="users-toolbar">
+          <div class="filter-group">
+            <button class="filter-btn active" data-filter="all" id="filter-all">Semua</button>
+            <button class="filter-btn" data-filter="active" id="filter-active">Aktif</button>
+            <button class="filter-btn" data-filter="banned" id="filter-banned">Banned</button>
+          </div>
+          <div class="search-box">
+            <input type="text" id="user-search" placeholder="Cari User ID...">
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="users-table">
+            <thead>
+              <tr>
+                <th>User ID</th>
+                <th>Username</th>
+                <th>Status</th>
+                <th>Terakhir Aktif</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="users-table-body">
+              <tr><td colspan="5" class="table-empty">Memuat data...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Server Page -->
+      <section id="page-server" class="page">
+        <div class="page-header">
+          <h1>Server Info</h1>
+        </div>
+        <div class="server-grid">
+          <div class="server-card" id="server-os">
+            <div class="server-card-icon">🐧</div>
+            <div class="server-card-label">OS</div>
+            <div class="server-card-value">—</div>
+          </div>
+          <div class="server-card" id="server-cpu">
+            <div class="server-card-icon">⚡</div>
+            <div class="server-card-label">CPU</div>
+            <div class="server-card-value">—</div>
+          </div>
+          <div class="server-card" id="server-ram">
+            <div class="server-card-icon">🧠</div>
+            <div class="server-card-label">RAM</div>
+            <div class="server-card-value">—</div>
+          </div>
+          <div class="server-card" id="server-storage">
+            <div class="server-card-icon">💾</div>
+            <div class="server-card-label">Storage</div>
+            <div class="server-card-value">—</div>
+          </div>
+          <div class="server-card" id="server-uptime">
+            <div class="server-card-icon">⏱️</div>
+            <div class="server-card-label">Uptime</div>
+            <div class="server-card-value">—</div>
+          </div>
+          <div class="server-card" id="server-env">
+            <div class="server-card-icon">☁️</div>
+            <div class="server-card-label">Environment</div>
+            <div class="server-card-value">—</div>
+          </div>
+          <div class="server-card" id="server-node">
+            <div class="server-card-icon">💚</div>
+            <div class="server-card-label">Node.js</div>
+            <div class="server-card-value">—</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings Page -->
+      <section id="page-settings" class="page">
+        <div class="page-header">
+          <h1>Pengaturan</h1>
+        </div>
+        <div class="settings-grid">
+          <div class="settings-card">
+            <h3>🤖 Bot Info</h3>
+            <div class="settings-item">
+              <span class="settings-label">Main Bot</span>
+              <span class="settings-value" id="setting-main-bot">—</span>
+            </div>
+            <div class="settings-item">
+              <span class="settings-label">Report Bot</span>
+              <span class="settings-value" id="setting-report-bot">—</span>
+            </div>
+            <div class="settings-item">
+              <span class="settings-label">Webhook URL</span>
+              <span class="settings-value" id="setting-webhook">—</span>
+            </div>
+          </div>
+          <div class="settings-card">
+            <h3>🛡️ Admin Config</h3>
+            <div class="settings-item">
+              <span class="settings-label">Admin IDs</span>
+              <span class="settings-value" id="setting-admin-ids">—</span>
+            </div>
+            <div class="settings-item">
+              <span class="settings-label">Super Admin IDs</span>
+              <span class="settings-value" id="setting-superadmin-ids">—</span>
+            </div>
+          </div>
+          <div class="settings-card">
+            <h3>⚙️ Limits</h3>
+            <div class="settings-item">
+              <span class="settings-label">Rate Limit Window</span>
+              <span class="settings-value" id="setting-rate-window">—</span>
+            </div>
+            <div class="settings-item">
+              <span class="settings-label">Max Messages</span>
+              <span class="settings-value" id="setting-rate-max">—</span>
+            </div>
+            <div class="settings-item">
+              <span class="settings-label">Max Report Desc Length</span>
+              <span class="settings-value" id="setting-report-length">—</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

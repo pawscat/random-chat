@@ -10,6 +10,7 @@ module.exports = {
   WEBHOOK_URL: 'ISI_URL_VERCEL_DISINI',
 
   DB_FILE: 'bot_data.sqlite',
+  DASHBOARD_PASSWORD: 'adminrahasia', // Password login web dashboard
   MAIN_BOT_USERNAME: 'randomchating_bot',
   REPORT_BOT_USERNAME: 'randomreport_bot',
   ADMIN_IDS: [8637897098, 6255931724],
