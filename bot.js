@@ -239,6 +239,7 @@ function startMainBot() {
         try {
           await handler(...args);
         } catch (error) {
+          console.error('[runSafely Error]', error);
           const msg = args[0];
           if (msg?.chat?.id) {
             await safeSendMessage(msg.chat.id, 'Terjadi kesalahan sistem. Coba lagi beberapa saat.');

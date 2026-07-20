@@ -987,7 +987,7 @@ module.exports = {
   countReportsByUser, countReportsAgainstUser, canCreateReport, recordReportCreated,
   resetReportWindowIfNeeded, logAdminAction, logBroadcast, listBroadcastTargets,
   getReportStep, setReportStep, deleteReportStep, getMessageRateLimit, setMessageRateLimit,
-  getRuntimeState, setRuntimeState, createBroadcastJob, getBroadcastJob, finishBroadcastJob,
+  getRuntimeState, setRuntimeState, createBroadcastJob, getBroadcastJob, updateBroadcastJobProgress, finishBroadcastJob,
   listBroadcastJobs, generateReportId, deleteUser
 };
 async function listBroadcastJobs(page = 1, limit = 20) {
