@@ -20,24 +20,27 @@ module.exports = async (req, res) => {
     // GET: list users
     if (req.method === 'GET') {
       const type = req.query.type || 'all'; // all, active, waiting, chatting, banned
-      let users = [];
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 100;
+
+      let result;
       switch (type) {
         case 'active':
-          users = await database.listActiveUsers(100);
+          result = await database.listActiveUsers(config.ACTIVE_USER_WINDOW_MS, page, limit);
           break;
         case 'waiting':
-          users = await database.listWaitingUsers();
+          result = await database.listWaitingUsers(page, limit);
           break;
         case 'chatting':
-          users = await database.listChattingUsers();
+          result = await database.listChattingUsers(page, limit);
           break;
         case 'banned':
-          users = await database.getBannedUsers();
+          result = await database.getBannedUsers(page, limit);
           break;
         default:
-          users = await database.listUsers(100);
+          result = await database.listUsers(page, limit);
       }
-      return res.status(200).json({ success: true, users, type });
+      return res.status(200).json({ success: true, users: result.items, pagination: { page: result.page, totalPages: result.totalPages, total: result.total }, type });
     }
 
     // POST: action on user (ban/unban)
