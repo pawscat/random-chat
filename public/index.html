@@ -207,47 +207,52 @@
       <section id="page-settings" class="page">
         <div class="page-header">
           <h1>Pengaturan</h1>
+          <button id="save-settings-btn" class="action-btn ban-btn" style="background:var(--accent-blue); width:auto;" onclick="saveSettings()">Simpan Pengaturan</button>
         </div>
         <div class="settings-grid">
           <div class="settings-card">
-            <h3>🤖 Bot Info</h3>
+            <h3>🤖 Bot Info (Read Only)</h3>
             <div class="settings-item">
-              <span class="settings-label">Main Bot</span>
-              <span class="settings-value" id="setting-main-bot">—</span>
+              <span class="settings-label">Main Bot Username</span>
+              <input type="text" class="settings-input" id="setting-main-bot" disabled>
             </div>
             <div class="settings-item">
-              <span class="settings-label">Report Bot</span>
-              <span class="settings-value" id="setting-report-bot">—</span>
+              <span class="settings-label">Report Bot Username</span>
+              <input type="text" class="settings-input" id="setting-report-bot" disabled>
             </div>
             <div class="settings-item">
               <span class="settings-label">Webhook URL</span>
-              <span class="settings-value" id="setting-webhook">—</span>
+              <input type="text" class="settings-input" id="setting-webhook" disabled>
+            </div>
+            <div class="settings-item">
+              <span class="settings-label">Bot Name</span>
+              <input type="text" class="settings-input" id="setting-bot-name">
             </div>
           </div>
           <div class="settings-card">
             <h3>🛡️ Admin Config</h3>
             <div class="settings-item">
-              <span class="settings-label">Admin IDs</span>
-              <span class="settings-value" id="setting-admin-ids">—</span>
+              <span class="settings-label">Admin IDs (Comma Separated)</span>
+              <input type="text" class="settings-input" id="setting-admin-ids">
             </div>
             <div class="settings-item">
-              <span class="settings-label">Super Admin IDs</span>
-              <span class="settings-value" id="setting-superadmin-ids">—</span>
+              <span class="settings-label">Super Admin IDs (Comma Separated)</span>
+              <input type="text" class="settings-input" id="setting-superadmin-ids">
             </div>
           </div>
           <div class="settings-card">
-            <h3>⚙️ Limits</h3>
-            <div class="settings-item">
-              <span class="settings-label">Rate Limit Window</span>
-              <span class="settings-value" id="setting-rate-window">—</span>
-            </div>
-            <div class="settings-item">
-              <span class="settings-label">Max Messages</span>
-              <span class="settings-value" id="setting-rate-max">—</span>
-            </div>
+            <h3>⚙️ Limits & Durations</h3>
             <div class="settings-item">
               <span class="settings-label">Max Report Desc Length</span>
-              <span class="settings-value" id="setting-report-length">—</span>
+              <input type="number" class="settings-input" id="setting-report-length">
+            </div>
+            <div class="settings-item">
+              <span class="settings-label">Report Limit Per Day</span>
+              <input type="number" class="settings-input" id="setting-report-limit">
+            </div>
+            <div class="settings-item">
+              <span class="settings-label">Active User Window (ms)</span>
+              <input type="number" class="settings-input" id="setting-active-window">
             </div>
           </div>
         </div>

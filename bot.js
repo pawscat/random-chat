@@ -25,11 +25,16 @@ function startMainBot() {
   // Hapus polling: true untuk mode Vercel Serverless
   const bot = new TelegramBot(config.MAIN_BOT_TOKEN);
   
-  const adminSet = new Set([...config.ADMIN_IDS, ...config.SUPER_ADMIN_IDS].map(Number));
-  const superAdminSet = new Set(config.SUPER_ADMIN_IDS.map(Number));
-
-  function isAdmin(userId) { return adminSet.has(Number(userId)); }
-  function isSuperAdmin(userId) { return superAdminSet.has(Number(userId)); }
+  function isAdmin(userId) {
+    const ids = Array.isArray(config.ADMIN_IDS) ? config.ADMIN_IDS : [];
+    const supers = Array.isArray(config.SUPER_ADMIN_IDS) ? config.SUPER_ADMIN_IDS : [];
+    return ids.includes(Number(userId)) || supers.includes(Number(userId));
+  }
+  
+  function isSuperAdmin(userId) {
+    const supers = Array.isArray(config.SUPER_ADMIN_IDS) ? config.SUPER_ADMIN_IDS : [];
+    return supers.includes(Number(userId));
+  }
 
   function normalizeStatus(status) {
     if (status === 'waiting' || status === 'chatting' || status === 'banned') return status;

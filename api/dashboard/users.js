@@ -17,6 +17,8 @@ module.exports = async (req, res) => {
   }
 
   try {
+    await config.loadDynamicConfig(database);
+
     // GET: list users
     if (req.method === 'GET') {
       const type = req.query.type || 'all'; // all, active, waiting, chatting, banned

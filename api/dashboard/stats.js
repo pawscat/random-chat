@@ -19,6 +19,7 @@ module.exports = async (req, res) => {
   }
 
   try {
+    await config.loadDynamicConfig(database);
     const userStats = await database.getUserStats(config.ACTIVE_USER_WINDOW_MS);
     const reportStats = await database.countReportsByStatus();
 

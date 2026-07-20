@@ -188,26 +188,55 @@ async function loadUsers(type = 'all') {
 
 async function loadSettings() {
   try {
-    // Use cached settings from loadStats, or fetch fresh
-    let settings = window._cachedSettings;
-    if (!settings) {
-      const data = await apiGet('stats');
-      if (!data.success) return;
-      settings = data.settings;
-    }
+    const data = await apiGet('settings');
+    if (!data.success) return;
+    const settings = data.settings;
 
-    $('#setting-main-bot').textContent = settings.mainBot || '—';
-    $('#setting-report-bot').textContent = settings.reportBot || '—';
-    $('#setting-webhook').textContent = settings.webhookUrl || '—';
-    $('#setting-admin-ids').textContent = (settings.adminIds || []).join(', ');
-    $('#setting-superadmin-ids').textContent = (settings.superAdminIds || []).join(', ');
-    $('#setting-rate-window').textContent = settings.rateLimitWindow || '—';
-    $('#setting-rate-max').textContent = settings.rateLimitMax || '—';
-    $('#setting-report-length').textContent = settings.maxReportDescLength || '—';
+    $('#setting-main-bot').value = settings.MAIN_BOT_USERNAME || '';
+    $('#setting-report-bot').value = settings.REPORT_BOT_USERNAME || '';
+    $('#setting-webhook').value = settings.WEBHOOK_URL || '';
+    $('#setting-bot-name').value = settings.BOT_NAME || '';
+    $('#setting-admin-ids').value = (settings.ADMIN_IDS || []).join(', ');
+    $('#setting-superadmin-ids').value = (settings.SUPER_ADMIN_IDS || []).join(', ');
+    $('#setting-report-length').value = settings.MAX_REPORT_DESCRIPTION_LENGTH || '';
+    $('#setting-report-limit').value = settings.REPORT_LIMIT_PER_DAY || '';
+    $('#setting-active-window').value = settings.ACTIVE_USER_WINDOW_MS || '';
   } catch (err) {
     console.error('loadSettings error:', err);
   }
 }
+
+async function saveSettings() {
+  const btn = $('#save-settings-btn');
+  const originalText = btn.textContent;
+  btn.textContent = 'Menyimpan...';
+  btn.disabled = true;
+
+  try {
+    const updates = {
+      BOT_NAME: $('#setting-bot-name').value.trim(),
+      ADMIN_IDS: $('#setting-admin-ids').value.split(',').map(s => Number(s.trim())).filter(n => n > 0),
+      SUPER_ADMIN_IDS: $('#setting-superadmin-ids').value.split(',').map(s => Number(s.trim())).filter(n => n > 0),
+      MAX_REPORT_DESCRIPTION_LENGTH: Number($('#setting-report-length').value),
+      REPORT_LIMIT_PER_DAY: Number($('#setting-report-limit').value),
+      ACTIVE_USER_WINDOW_MS: Number($('#setting-active-window').value)
+    };
+
+    const data = await apiPost('settings', updates);
+    if (data.success) {
+      showToast('Pengaturan berhasil disimpan!', 'success');
+    } else {
+      showToast(data.error || 'Gagal menyimpan pengaturan.', 'error');
+    }
+  } catch (err) {
+    showToast('Terjadi kesalahan.', 'error');
+  } finally {
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
+}
+window.saveSettings = saveSettings;
+
 
 // ===================== USER ACTIONS =====================
 

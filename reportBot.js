@@ -20,11 +20,16 @@ function startReportBot() {
 
   // Hapus polling: true untuk Vercel Serverless
   const bot = new TelegramBot(config.REPORT_BOT_TOKEN);
-  const adminSet = new Set([...config.ADMIN_IDS, ...config.SUPER_ADMIN_IDS].map(Number));
-  const superAdminSet = new Set(config.SUPER_ADMIN_IDS.map(Number));
-
-  function isAdmin(userId) { return adminSet.has(Number(userId)); }
-  function isSuperAdmin(userId) { return superAdminSet.has(Number(userId)); }
+  function isAdmin(userId) {
+    const ids = Array.isArray(config.ADMIN_IDS) ? config.ADMIN_IDS : [];
+    const supers = Array.isArray(config.SUPER_ADMIN_IDS) ? config.SUPER_ADMIN_IDS : [];
+    return ids.includes(Number(userId)) || supers.includes(Number(userId));
+  }
+  
+  function isSuperAdmin(userId) {
+    const supers = Array.isArray(config.SUPER_ADMIN_IDS) ? config.SUPER_ADMIN_IDS : [];
+    return supers.includes(Number(userId));
+  }
 
   function sanitizeInput(text, maxLen) {
     return String(text || '').replace(/[\u0000-\u001F\u007F]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, maxLen);
@@ -91,7 +96,11 @@ function startReportBot() {
     if (now - lastAt < config.ADMIN_NOTIFICATION_COOLDOWN_MS) return;
     
     await setRuntimeState('lastAdminNotificationAt', now.toString());
-    for (const adminId of adminSet) {
+    const ids = Array.isArray(config.ADMIN_IDS) ? config.ADMIN_IDS : [];
+    const supers = Array.isArray(config.SUPER_ADMIN_IDS) ? config.SUPER_ADMIN_IDS : [];
+    const allAdmins = new Set([...ids, ...supers].map(Number));
+
+    for (const adminId of allAdmins) {
       await safeSendMessage(adminId, config.MESSAGES.adminNewReportNotification);
     }
   }

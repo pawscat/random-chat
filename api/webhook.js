@@ -15,6 +15,10 @@ module.exports = async function handler(req, res) {
   const update = req.body;
 
   try {
+    const config = require('../config');
+    const database = require('../database');
+    await config.loadDynamicConfig(database);
+
     if (bot === 'main') {
       await mainBot.processUpdate(update);
       if (mainBot.pendingPromises && mainBot.pendingPromises.length) await Promise.allSettled(mainBot.pendingPromises);

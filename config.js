@@ -80,5 +80,22 @@ module.exports = {
     reportAlreadyActive: 'Anda masih punya laporan aktif. Selesaikan dulu sebelum membuat laporan baru.',
     adminOnly: 'Perintah ini hanya untuk admin.',
     adminNewReportNotification: 'Ada laporan baru masuk. Gunakan /nextreport untuk mengambil laporan.'
+  },
+
+  // Fungsi untuk memuat pengaturan dinamis dari database
+  loadDynamicConfig: async function(database) {
+    try {
+      const state = await database.getRuntimeState('dynamic_settings');
+      if (state) {
+        const parsed = JSON.parse(state);
+        for (const key in parsed) {
+          if (key !== 'loadDynamicConfig' && key !== 'TURSO_DATABASE_URL' && key !== 'TURSO_AUTH_TOKEN' && this.hasOwnProperty(key)) {
+            this[key] = parsed[key];
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load dynamic config:', e);
+    }
   }
 };
