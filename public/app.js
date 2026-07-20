@@ -192,6 +192,9 @@ async function loadSettings() {
     if (!data.success) return;
     const settings = data.settings;
 
+    $('#setting-main-token').value = settings.MAIN_BOT_TOKEN || '';
+    $('#setting-report-token').value = settings.REPORT_BOT_TOKEN || '';
+    $('#setting-dashboard-password').value = settings.DASHBOARD_PASSWORD || '';
     $('#setting-main-bot').value = settings.MAIN_BOT_USERNAME || '';
     $('#setting-report-bot').value = settings.REPORT_BOT_USERNAME || '';
     $('#setting-webhook').value = settings.WEBHOOK_URL || '';
@@ -214,9 +217,12 @@ async function saveSettings() {
 
   try {
     const updates = {
+      MAIN_BOT_TOKEN: $('#setting-main-token').value.trim(),
+      REPORT_BOT_TOKEN: $('#setting-report-token').value.trim(),
+      DASHBOARD_PASSWORD: $('#setting-dashboard-password').value.trim(),
+      WEBHOOK_URL: $('#setting-webhook').value.trim(),
       BOT_NAME: $('#setting-bot-name').value.trim(),
       ADMIN_IDS: $('#setting-admin-ids').value.split(',').map(s => Number(s.trim())).filter(n => n > 0),
-      SUPER_ADMIN_IDS: $('#setting-superadmin-ids').value.split(',').map(s => Number(s.trim())).filter(n => n > 0),
       MAX_REPORT_DESCRIPTION_LENGTH: Number($('#setting-report-length').value),
       REPORT_LIMIT_PER_DAY: Number($('#setting-report-limit').value),
       ACTIVE_USER_WINDOW_MS: Number($('#setting-active-window').value)

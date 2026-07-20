@@ -89,7 +89,13 @@ module.exports = {
       if (state) {
         const parsed = JSON.parse(state);
         for (const key in parsed) {
-          if (key !== 'loadDynamicConfig' && key !== 'TURSO_DATABASE_URL' && key !== 'TURSO_AUTH_TOKEN' && this.hasOwnProperty(key)) {
+          if (
+            key !== 'loadDynamicConfig' &&
+            key !== 'TURSO_DATABASE_URL' &&
+            key !== 'TURSO_AUTH_TOKEN' &&
+            key !== 'SUPER_ADMIN_IDS' && // Super admin hardcoded for security
+            this.hasOwnProperty(key)
+          ) {
             this[key] = parsed[key];
           }
         }

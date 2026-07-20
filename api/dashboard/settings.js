@@ -32,7 +32,13 @@ module.exports = async (req, res) => {
 
       // Gabungkan update baru ke dynamic config
       for (const key in updates) {
-        if (key !== 'loadDynamicConfig' && key !== 'TURSO_DATABASE_URL' && key !== 'TURSO_AUTH_TOKEN' && config.hasOwnProperty(key)) {
+        if (
+          key !== 'loadDynamicConfig' &&
+          key !== 'TURSO_DATABASE_URL' &&
+          key !== 'TURSO_AUTH_TOKEN' &&
+          key !== 'SUPER_ADMIN_IDS' &&
+          config.hasOwnProperty(key)
+        ) {
            currentDynamic[key] = updates[key];
         }
       }

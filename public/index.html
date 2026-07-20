@@ -211,22 +211,34 @@
         </div>
         <div class="settings-grid">
           <div class="settings-card">
-            <h3>🤖 Bot Info (Read Only)</h3>
+            <h3>🤖 Bot Info (Tokens & Security)</h3>
             <div class="settings-item">
-              <span class="settings-label">Main Bot Username</span>
-              <input type="text" class="settings-input" id="setting-main-bot" disabled>
+              <span class="settings-label">Main Bot Token</span>
+              <input type="text" class="settings-input" id="setting-main-token" placeholder="Bot Token Utama">
             </div>
             <div class="settings-item">
-              <span class="settings-label">Report Bot Username</span>
-              <input type="text" class="settings-input" id="setting-report-bot" disabled>
+              <span class="settings-label">Report Bot Token</span>
+              <input type="text" class="settings-input" id="setting-report-token" placeholder="Bot Token Report">
             </div>
             <div class="settings-item">
               <span class="settings-label">Webhook URL</span>
-              <input type="text" class="settings-input" id="setting-webhook" disabled>
+              <input type="text" class="settings-input" id="setting-webhook" placeholder="https://...">
+            </div>
+            <div class="settings-item">
+              <span class="settings-label">Dashboard Password</span>
+              <input type="text" class="settings-input" id="setting-dashboard-password" placeholder="Password Login Web">
             </div>
             <div class="settings-item">
               <span class="settings-label">Bot Name</span>
               <input type="text" class="settings-input" id="setting-bot-name">
+            </div>
+            <div class="settings-item">
+              <span class="settings-label">Main Bot Username (Read Only)</span>
+              <input type="text" class="settings-input" id="setting-main-bot" disabled>
+            </div>
+            <div class="settings-item">
+              <span class="settings-label">Report Bot Username (Read Only)</span>
+              <input type="text" class="settings-input" id="setting-report-bot" disabled>
             </div>
           </div>
           <div class="settings-card">
@@ -236,8 +248,8 @@
               <input type="text" class="settings-input" id="setting-admin-ids">
             </div>
             <div class="settings-item">
-              <span class="settings-label">Super Admin IDs (Comma Separated)</span>
-              <input type="text" class="settings-input" id="setting-superadmin-ids">
+              <span class="settings-label">Super Admin IDs (Hardcoded di config)</span>
+              <input type="text" class="settings-input" id="setting-superadmin-ids" disabled>
             </div>
           </div>
           <div class="settings-card">

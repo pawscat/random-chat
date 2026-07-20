@@ -1,9 +1,11 @@
 const { startMainBot } = require('../bot');
 const { startReportBot } = require('../reportBot');
 
-// Inisialisasi bot tanpa mode polling
-const mainBot = startMainBot();
-const reportBot = startReportBot();
+// Cache bot instances untuk performa (hanya di-recreate jika token berubah)
+let mainBot = null;
+let reportBot = null;
+let cachedMainToken = null;
+let cachedReportToken = null;
 
 module.exports = async function handler(req, res) {
   // Hanya menerima HTTP POST (Telegram Webhook)
@@ -18,6 +20,16 @@ module.exports = async function handler(req, res) {
     const config = require('../config');
     const database = require('../database');
     await config.loadDynamicConfig(database);
+
+    // Inisialisasi dinamis dengan token terbaru dari database
+    if (!mainBot || cachedMainToken !== config.MAIN_BOT_TOKEN) {
+      mainBot = startMainBot();
+      cachedMainToken = config.MAIN_BOT_TOKEN;
+    }
+    if (!reportBot || cachedReportToken !== config.REPORT_BOT_TOKEN) {
+      reportBot = startReportBot();
+      cachedReportToken = config.REPORT_BOT_TOKEN;
+    }
 
     if (bot === 'main') {
       await mainBot.processUpdate(update);
