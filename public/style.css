@@ -448,7 +448,7 @@ body {
 .stat-primary::before { background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple)); }
 .stat-success::before { background: var(--accent-green); }
 .stat-warning::before { background: var(--accent-amber); }
-.stat-info::before { background: var(--accent-cyan); }
+.stat-cyan::before { background: var(--accent-cyan); }
 .stat-danger::before { background: var(--accent-rose); }
 .stat-report::before { background: linear-gradient(90deg, var(--accent-amber), var(--accent-rose)); }
 
