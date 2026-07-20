@@ -46,6 +46,15 @@ function startReportBot() {
     }
   }
 
+  async function safeSendPhoto(chatId, photoId, options = {}) {
+    try {
+      await bot.sendPhoto(chatId, photoId, options);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
   function isTerminalStatus(status) {
     return status === 'resolved' || status === 'rejected' || status === 'banned';
   }
@@ -267,6 +276,9 @@ function startReportBot() {
     }
     await logAdminAction(adminId, 'claim_report', null, selected.report_id, 'nextreport');
     await safeSendMessage(msg.chat.id, `Report diambil: ${claimed.report.report_id}\n\n${getReportDetailText(claimed.report)}`);
+    if (claimed.report.evidence_photo_file_id) {
+      await safeSendPhoto(msg.chat.id, claimed.report.evidence_photo_file_id, { caption: 'Bukti Pelanggaran' });
+    }
   }));
   bot.onText(/^\/claim(?:@\w+)?(?:\s+([A-Za-z0-9_-]+))?$/i, runSafely(async (msg, match) => {
     if (!msg.from || !isAdmin(msg.from.id)) return;
@@ -281,6 +293,9 @@ function startReportBot() {
     }
     await logAdminAction(adminId, 'claim_report', null, reportId, null);
     await safeSendMessage(msg.chat.id, `Report diambil: ${claimed.report.report_id}\n\n${getReportDetailText(claimed.report)}`);
+    if (claimed.report.evidence_photo_file_id) {
+      await safeSendPhoto(msg.chat.id, claimed.report.evidence_photo_file_id, { caption: 'Bukti Pelanggaran' });
+    }
   }));
 
   bot.onText(/^\/resolve(?:@\w+)?(?:\s+([A-Za-z0-9_-]+))?(?:\s+([\s\S]+))?$/i, runSafely(async (msg, match) => {
