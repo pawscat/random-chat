@@ -148,7 +148,7 @@ async function loadUsers(type = 'all') {
       return;
     }
 
-    tbody.innerHTML = data.users.map(u => {
+    tbody.innerHTML = data.users.map((u, index) => {
       const isBanned = u.is_banned === 1 || u.banned === 1;
       let statusBadge = '';
       if (isBanned) {
@@ -166,21 +166,22 @@ async function loadUsers(type = 'all') {
         }
       }
       const actionBtn = isBanned
-        ? `<button class="action-btn unban-btn" onclick="userAction('unban', ${u.user_id || u.userId})">Unban</button>
-           <button class="action-btn ban-btn" style="background:var(--accent-rose)" onclick="userAction('delete', ${u.user_id || u.userId})">Hapus</button>`
-        : `<button class="action-btn ban-btn" onclick="userAction('ban', ${u.user_id || u.userId})">Ban</button>
-           <button class="action-btn ban-btn" style="background:var(--accent-rose)" onclick="userAction('delete', ${u.user_id || u.userId})">Hapus</button>`;
+        ? `<button class="action-btn" onclick="userAction('unban', ${u.user_id || u.userId})">Unban</button>`
+        : `<button class="action-btn" style="background:var(--accent-amber);color:#fff" onclick="userAction('ban', ${u.user_id || u.userId})">Ban</button>`;
+      
+      const deleteBtn = `<button class="action-btn" style="background:var(--accent-rose);color:#fff;margin-left:4px" onclick="userAction('delete', ${u.user_id || u.userId})">Hapus</button>`;
+      
       const lastActive = timeAgo(u.last_active || u.lastActive);
       const fullName = [u.first_name || u.firstName, u.last_name || u.lastName].filter(Boolean).join(' ') || 'Tanpa Nama';
       const username = u.username ? `<br><small style="color:var(--accent-blue)">@${u.username}</small>` : '';
       const profileInfo = `<div>${fullName}${username}</div>`;
 
-      return `<tr>
+      return `<tr style="animation-delay: ${index * 0.05}s">
         <td><strong>${u.user_id || u.userId || '—'}</strong></td>
         <td>${profileInfo}</td>
         <td>${statusBadge}</td>
-        <td>${lastActive}</td>
-        <td>${actionBtn}</td>
+        <td><small>${lastActive}</small></td>
+        <td>${actionBtn}${deleteBtn}</td>
       </tr>`;
     }).join('');
   } catch (err) {
@@ -204,17 +205,17 @@ async function loadReports(type = 'pending') {
     
     container.style.display = 'grid';
 
-    container.innerHTML = data.reports.map(r => {
-      let statusHtml = '';
-      if (r.status === 'submitted') statusHtml = '<span class="report-status pending">Pending</span>';
-      else if (r.status === 'under_review') statusHtml = '<span class="report-status claimed">Direview</span>';
-      else if (r.status === 'resolved') statusHtml = '<span class="report-status resolved">Selesai</span>';
-      else if (r.status === 'banned') statusHtml = '<span class="report-status banned">Banned</span>';
-      else if (r.status === 'pending_evidence') statusHtml = '<span class="report-status" style="background:#f59e0b;color:white;">Draft / Menunggu Bukti</span>';
-      else statusHtml = `<span class="report-status">${r.status}</span>`;
+    container.innerHTML = data.reports.map((r, index) => {
+      let statusBadge = '';
+      if (r.status === 'submitted') statusBadge = '<span class="report-status pending">Pending</span>';
+      else if (r.status === 'under_review') statusBadge = '<span class="report-status claimed">Direview</span>';
+      else if (r.status === 'resolved') statusBadge = '<span class="report-status resolved">Selesai</span>';
+      else if (r.status === 'banned') statusBadge = '<span class="report-status banned">Banned</span>';
+      else if (r.status === 'pending_evidence') statusBadge = '<span class="report-status" style="background:#f59e0b;color:white;">Draft / Menunggu Bukti</span>';
+      else statusBadge = `<span class="report-status">${r.status}</span>`;
 
       const imgHtml = r.evidence_photo_file_id 
-        ? `<img class="report-image" src="/api/dashboard/reports?photo=1&file_id=${r.evidence_photo_file_id}&token=${getAuthToken()}" alt="Evidence" onclick="window.open(this.src)">` 
+        ? `<img class="report-image" src="/api/dashboard/reports?photo=1&file_id=${r.evidence_photo_file_id}&token=${sessionStorage.getItem('dashToken')}" alt="Evidence" onclick="window.open(this.src)">` 
         : '';
       
       const time = new Date(r.created_at || r.createdAt).toLocaleString('id-ID');
@@ -236,16 +237,19 @@ async function loadReports(type = 'pending') {
       }
 
       return `
-        <div class="report-item">
+        <div class="report-item" style="animation-delay: ${index * 0.05}s; animation: fadeSlideUp 0.4s ease-out forwards; opacity: 0; transform: translateY(10px);">
           <div class="report-header">
             <div>
-              <div class="report-title">Laporan #${(r.report_id||'').substring(0,6)}</div>
-              <div class="report-meta">Oleh: ${r.reporter_id} | Terlapor: ${r.reported_user_id}</div>
-              <div class="report-meta">${time}</div>
+              <span class="report-id">#${(r.report_id||'').substring(0,6)}</span>
+              ${statusBadge}
             </div>
-            ${statusHtml}
+            <div class="report-time">${time}</div>
           </div>
-          <div class="report-content">
+          <div class="report-users">
+            <div>Pelapor: <strong>${r.reporter_id}</strong></div>
+            <div>Terlapor: <strong>${r.reported_user_id}</strong></div>
+          </div>
+          <div class="report-desc">
             <strong>Pelanggaran:</strong> ${r.violation_type || '-'}<br><br>
             ${r.description || 'Tidak ada deskripsi'}
           </div>
@@ -620,10 +624,10 @@ async function loadSessions(type = 'active') {
       return;
     }
 
-    tbody.innerHTML = data.items.map(i => {
+    tbody.innerHTML = data.items.map((i, index) => {
       if (type === 'active') {
         const time = new Date(i.started_at || i.startedAt).toLocaleString('id-ID');
-        return `<tr>
+        return `<tr style="animation-delay: ${index * 0.05}s">
           <td>${i.user_id}</td>
           <td>${i.partner_id}</td>
           <td>${time}</td>
@@ -634,7 +638,7 @@ async function loadSessions(type = 'active') {
         const fullName = [i.first_name || i.firstName, i.last_name || i.lastName].filter(Boolean).join(' ') || 'Tanpa Nama';
         const username = i.username ? `<br><small style="color:var(--accent-blue)">@${i.username}</small>` : '';
         const profileInfo = `<div>${fullName}${username}</div>`;
-        return `<tr>
+        return `<tr style="animation-delay: ${index * 0.05}s">
           <td><strong>${i.user_id}</strong></td>
           <td>${profileInfo}</td>
           <td>${time}</td>
