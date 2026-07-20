@@ -615,17 +615,21 @@ async function loadSessions(type = 'active') {
     
     if (type === 'active') {
       thead.innerHTML = `
-        <th>User A</th>
-        <th>User B</th>
-        <th>Waktu Mulai</th>
-        <th>Aksi</th>
+        <tr>
+          <th>User A</th>
+          <th>User B</th>
+          <th>Waktu Mulai</th>
+          <th>Aksi</th>
+        </tr>
       `;
     } else {
       thead.innerHTML = `
-        <th>User ID</th>
-        <th>Profil</th>
-        <th>Waktu Masuk Antrean</th>
-        <th>Aksi</th>
+        <tr>
+          <th>User ID</th>
+          <th>Profil</th>
+          <th>Waktu Masuk Antrean</th>
+          <th>Aksi</th>
+        </tr>
       `;
     }
 
