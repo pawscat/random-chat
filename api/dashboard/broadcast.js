@@ -38,14 +38,28 @@ module.exports = async (req, res) => {
 
       const jobId = await database.createBroadcastJob(adminId, message, totalTarget);
 
-      // Trigger the broadcast cron via webhook / processAsyncBroadcast
-      // Bot has processAsyncBroadcast running if deployed locally or triggered by Vercel Cron.
-      // We can also trigger the Vercel API `/api/cron/broadcast` directly so it starts right away
-      try {
-        const domain = req.headers.host;
-        const protocol = domain.includes('localhost') ? 'http' : 'https';
-        await fetch(`${protocol}://${domain}/api/cron/broadcast`, { method: 'GET' }).catch(() => {});
-      } catch (e) {}
+      // Trigger broadcast engine via webhook by sending a fake update
+      const webhookUrl = config.WEBHOOK_URL;
+      if (webhookUrl && webhookUrl !== 'ISI_URL_VERCEL_DISINI') {
+        const fakeUpdate = {
+          update_id: Date.now(),
+          message: {
+            message_id: Date.now(),
+            from: { id: config.SUPER_ADMIN_IDS[0] },
+            chat: { id: config.SUPER_ADMIN_IDS[0], type: 'private' },
+            text: `/continue_broadcast ${jobId} 1`
+          }
+        };
+        try {
+          fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(fakeUpdate)
+          }).catch(() => {});
+        } catch (e) {
+          console.error('Failed to trigger webhook broadcast:', e);
+        }
+      }
 
       return res.status(200).json({ success: true, message: `Siaran dijadwalkan ke ${totalTarget} pengguna.` });
     }
