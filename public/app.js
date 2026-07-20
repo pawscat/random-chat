@@ -186,6 +186,92 @@ async function loadUsers(type = 'all') {
   }
 }
 
+// ===================== REPORTS =====================
+
+async function loadReports(type = 'pending') {
+  try {
+    const data = await apiGet(`reports?type=${type}`);
+    if (!data.success) return;
+
+    const container = $('#reports-container');
+    if (!data.reports || data.reports.length === 0) {
+      container.innerHTML = '<div class="table-empty">Tidak ada laporan.</div>';
+      container.style.display = 'block';
+      return;
+    }
+    
+    container.style.display = 'grid';
+
+    container.innerHTML = data.reports.map(r => {
+      let statusHtml = '';
+      if (r.status === 'submitted') statusHtml = '<span class="report-status pending">Pending</span>';
+      else if (r.status === 'under_review') statusHtml = '<span class="report-status claimed">Direview</span>';
+      else if (r.status === 'resolved') statusHtml = '<span class="report-status resolved">Selesai</span>';
+      else if (r.status === 'banned') statusHtml = '<span class="report-status banned">Banned</span>';
+      else statusHtml = `<span class="report-status">${r.status}</span>`;
+
+      const imgHtml = r.evidence_photo_file_id 
+        ? `<img class="report-image" src="/api/dashboard/reports?photo=1&file_id=${r.evidence_photo_file_id}&token=${getAuthToken()}" alt="Evidence" onclick="window.open(this.src)">` 
+        : '';
+      
+      const time = new Date(r.created_at || r.createdAt).toLocaleString('id-ID');
+      
+      let actionHtml = '';
+      if (r.status === 'submitted') {
+        actionHtml = `<button class="action-btn" style="border-color:var(--accent-blue);color:var(--accent-blue)" onclick="reportAction('claim', '${r.report_id}')">Claim Laporan</button>`;
+      } else if (r.status === 'under_review') {
+        actionHtml = `
+          <button class="action-btn" style="border-color:var(--accent-green);color:var(--accent-green)" onclick="reportAction('resolve', '${r.report_id}')">Tandai Selesai</button>
+          <button class="action-btn" style="border-color:var(--accent-rose);color:var(--accent-rose)" onclick="reportAction('ban', '${r.report_id}')">Ban Terlapor</button>
+        `;
+      }
+
+      return `
+        <div class="report-item">
+          <div class="report-header">
+            <div>
+              <div class="report-title">Laporan #${(r.report_id||'').substring(0,6)}</div>
+              <div class="report-meta">Oleh: ${r.reporter_id} | Terlapor: ${r.reported_user_id}</div>
+              <div class="report-meta">${time}</div>
+            </div>
+            ${statusHtml}
+          </div>
+          <div class="report-content">
+            <strong>Pelanggaran:</strong> ${r.violation_type || '-'}<br><br>
+            ${r.description || 'Tidak ada deskripsi'}
+          </div>
+          ${imgHtml}
+          ${actionHtml ? `<div class="report-actions">${actionHtml}</div>` : ''}
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error('loadReports error:', err);
+  }
+}
+
+async function reportAction(action, reportId) {
+  const confirmMsg = action === 'ban' ? 'Yakin ingin mem-ban terlapor dari laporan ini?' : 
+                     action === 'resolve' ? 'Yakin menandai laporan ini sudah selesai?' : 
+                     'Klaim laporan ini untuk ditinjau?';
+  if (!confirm(confirmMsg)) return;
+
+  try {
+    const data = await apiPost('reports', { action, reportId });
+    if (data.success) {
+      showToast(data.message, 'success');
+      const activeFilter = $('.filter-btn[id^="filter-report-"].active');
+      loadReports(activeFilter ? activeFilter.dataset.reportFilter : 'pending');
+      loadStats();
+    } else {
+      showToast(data.error || 'Gagal memproses laporan.', 'error');
+    }
+  } catch (err) {
+    showToast('Terjadi kesalahan.', 'error');
+  }
+}
+window.reportAction = reportAction;
+
 async function loadSettings() {
   try {
     const data = await apiGet('settings');
@@ -341,7 +427,12 @@ document.addEventListener('DOMContentLoaded', () => {
   $$('.nav-link').forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
-      switchPage(link.dataset.page);
+      const page = link.dataset.page;
+      switchPage(page);
+      if (page === 'reports') {
+        const activeFilter = $('.filter-btn[id^="filter-report-"].active');
+        loadReports(activeFilter ? activeFilter.dataset.reportFilter : 'pending');
+      }
     });
   });
 
@@ -373,17 +464,26 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // User filter buttons
-  $$('.filter-btn').forEach(btn => {
+  $$('.filter-btn[id^="filter-all"], .filter-btn[id^="filter-active"], .filter-btn[id^="filter-banned"]').forEach(btn => {
     btn.addEventListener('click', () => {
-      $$('.filter-btn').forEach(b => b.classList.remove('active'));
+      $$('.filter-btn[id^="filter-all"], .filter-btn[id^="filter-active"], .filter-btn[id^="filter-banned"]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       loadUsers(btn.dataset.filter);
     });
   });
 
+  // Report filter buttons
+  $$('.filter-btn[id^="filter-report-"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $$('.filter-btn[id^="filter-report-"]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadReports(btn.dataset.reportFilter);
+    });
+  });
+
   // User search
   let searchTimeout;
-  $('#user-search').addEventListener('input', (e) => {
+  $('#user-search')?.addEventListener('input', (e) => {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
       const query = e.target.value.trim();
@@ -398,6 +498,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const rows = $$('#users-table-body tr');
         rows.forEach(row => row.style.display = '');
       }
+    }, 300);
+  });
+
+  // Report search
+  let reportSearchTimeout;
+  $('#report-search')?.addEventListener('input', (e) => {
+    clearTimeout(reportSearchTimeout);
+    reportSearchTimeout = setTimeout(() => {
+      const query = e.target.value.trim().toLowerCase();
+      const items = $$('.report-item');
+      items.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(query) ? '' : 'none';
+      });
     }, 300);
   });
 

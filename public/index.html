@@ -51,6 +51,9 @@
         <li><a href="#" class="nav-link" data-page="server" id="nav-server">
           <span class="nav-icon">🖥️</span> Server
         </a></li>
+        <li><a href="#" class="nav-link" data-page="reports" id="nav-reports">
+          <span class="nav-icon">📋</span> Laporan
+        </a></li>
         <li><a href="#" class="nav-link" data-page="settings" id="nav-settings">
           <span class="nav-icon">⚙️</span> Settings
         </a></li>
@@ -200,6 +203,29 @@
             <div class="server-card-label">Node.js</div>
             <div class="server-card-value">—</div>
           </div>
+        </div>
+      </section>
+
+      <!-- Reports Page -->
+      <section id="page-reports" class="page">
+        <div class="page-header">
+          <h1>Manajemen Laporan</h1>
+        </div>
+        <div class="users-toolbar">
+          <div class="filter-group">
+            <button class="filter-btn active" data-report-filter="pending" id="filter-report-pending">Pending</button>
+            <button class="filter-btn" data-report-filter="claimed" id="filter-report-claimed">Claimed</button>
+            <button class="filter-btn" data-report-filter="handled" id="filter-report-handled">Selesai</button>
+          </div>
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="report-search" placeholder="Cari ID Laporan / ID User...">
+          </div>
+        </div>
+        
+        <div id="reports-container" class="reports-container">
+          <!-- Dinamis dari JS -->
+          <div class="table-empty">Memuat data...</div>
         </div>
       </section>
 
