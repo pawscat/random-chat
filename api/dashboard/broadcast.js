@@ -1,6 +1,5 @@
 const config = require('../../config');
 const database = require('../../database');
-const fetch = require('node-fetch');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
