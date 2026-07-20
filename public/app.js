@@ -503,6 +503,27 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Broadcast File Input
+  const broadcastFileInput = $('#broadcast-file');
+  if (broadcastFileInput) {
+    broadcastFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      const nameSpan = $('#broadcast-file-name');
+      const clearBtn = $('#broadcast-file-clear');
+      if (file) {
+        if (file.size > 3 * 1024 * 1024) {
+          showToast('Ukuran file melebihi batas 3MB!', 'error');
+          clearBroadcastFile();
+          return;
+        }
+        nameSpan.textContent = file.name + ' (' + (file.size/1024/1024).toFixed(2) + ' MB)';
+        clearBtn.style.display = 'block';
+      } else {
+        clearBroadcastFile();
+      }
+    });
+  }
+
   // Report filter buttons
   $$('.filter-btn[id^="filter-report-"]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -697,11 +718,33 @@ window.sessionAction = sessionAction;
 
 // ===================== BROADCAST =====================
 
+function clearBroadcastFile() {
+  const input = $('#broadcast-file');
+  if (input) input.value = '';
+  const nameSpan = $('#broadcast-file-name');
+  if (nameSpan) nameSpan.textContent = 'Tidak ada file dipilih';
+  const clearBtn = $('#broadcast-file-clear');
+  if (clearBtn) clearBtn.style.display = 'none';
+}
+window.clearBroadcastFile = clearBroadcastFile;
+
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = error => reject(error);
+    reader.readAsDataURL(file);
+  });
+}
+
 async function sendBroadcast() {
   const msgInput = $('#broadcast-message');
   const message = msgInput.value.trim();
-  if (!message) {
-    showToast('Pesan tidak boleh kosong!', 'error');
+  const fileInput = $('#broadcast-file');
+  const file = fileInput ? fileInput.files[0] : null;
+
+  if (!message && !file) {
+    showToast('Pesan atau Media tidak boleh kosong!', 'error');
     return;
   }
 
@@ -713,10 +756,21 @@ async function sendBroadcast() {
   btn.disabled = true;
 
   try {
-    const data = await apiPost('broadcast', { message });
+    let payload = { message };
+    if (file) {
+      const base64 = await readFileAsBase64(file);
+      payload.media = {
+        name: file.name,
+        type: file.type || 'application/octet-stream',
+        data: base64
+      };
+    }
+
+    const data = await apiPost('broadcast', payload);
     if (data.success) {
       showToast(data.message, 'success');
       msgInput.value = '';
+      clearBroadcastFile();
       loadBroadcastHistory();
     } else {
       showToast(data.error || 'Gagal mengirim siaran.', 'error');
@@ -747,10 +801,18 @@ async function loadBroadcastHistory() {
       if (i.status === 'running' || i.status === 'processing') statusBadge = `<span class="badge" style="background:var(--accent-blue);color:white">Berjalan</span>`;
       if (i.status === 'completed') statusBadge = `<span class="badge" style="background:var(--accent-green);color:white">Selesai</span>`;
 
+      let messagePreview = i.message;
+      try {
+        const copyData = JSON.parse(i.message);
+        if (copyData && copyData.type === 'copy') {
+          messagePreview = `📎 [Media] ${copyData.caption || ''}`;
+        }
+      } catch(e) {}
+
       return `<tr style="animation-delay: ${index * 0.05}s">
         <td><strong>#${i.id}</strong></td>
         <td>${time}</td>
-        <td style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${i.message}">${i.message}</td>
+        <td style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${messagePreview.replace(/"/g, '&quot;')}">${messagePreview}</td>
         <td>${i.total_target}</td>
         <td>${statusBadge}</td>
         <td style="color:var(--accent-green)">${i.success_count}</td>

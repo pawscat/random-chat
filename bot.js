@@ -118,11 +118,12 @@ function startMainBot() {
     }
   }
 
-  async function safeCopyMessage(toChatId, fromChatId, messageId) {
+  async function safeCopyMessage(toChatId, fromChatId, messageId, options = {}) {
     try {
-      await bot.copyMessage(toChatId, fromChatId, messageId);
+      await bot.copyMessage(toChatId, fromChatId, messageId, options);
       return true;
     } catch (error) {
+      console.error(`[Error] safeCopyMessage ke ${toChatId} gagal:`, error.message);
       return false;
     }
   }
@@ -620,8 +621,25 @@ function startMainBot() {
     }
 
     let success = 0, failed = 0;
+    
+    let isCopy = false;
+    let copyData = null;
+    try {
+      copyData = JSON.parse(job.message);
+      if (copyData && copyData.type === 'copy' && copyData.message_id) {
+        isCopy = true;
+      }
+    } catch (e) {}
+
     for (const row of chunk.items) {
-      const ok = await safeSendMessage(Number(row.user_id), `[Broadcast]\n${job.message}`);
+      const targetId = Number(row.user_id);
+      let ok = false;
+      if (isCopy) {
+        const options = copyData.caption ? { caption: copyData.caption } : {};
+        ok = await safeCopyMessage(targetId, job.admin_id, copyData.message_id, options);
+      } else {
+        ok = await safeSendMessage(targetId, `[Broadcast]\n${job.message}`);
+      }
       if (ok) success++; else failed++;
     }
 

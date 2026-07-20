@@ -295,7 +295,13 @@
             <h3>📢 Kirim Pesan Siaran (Broadcast)</h3>
             <p style="margin-bottom: 15px; color: var(--text-secondary);">Pesan akan dikirim ke seluruh pengguna yang tidak dibanned secara bertahap.</p>
             <div class="settings-item" style="flex-direction: column; align-items: stretch; gap: 10px;">
-              <textarea class="settings-input" id="broadcast-message" rows="6" placeholder="Ketik pesan siaran di sini... Mendukung formatting Telegram (HTML/Markdown)" style="resize: vertical;"></textarea>
+              <textarea class="settings-input" id="broadcast-message" rows="6" placeholder="Ketik pesan / caption siaran di sini... Mendukung formatting Telegram (HTML/Markdown)" style="resize: vertical;"></textarea>
+              <div style="display: flex; gap: 10px; align-items: center; background: rgba(255,255,255,0.05); padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-glass);">
+                <label for="broadcast-file" class="action-btn" style="background:var(--accent-purple); cursor:pointer; width:auto; flex-shrink: 0;">📎 Lampirkan Media (Max 3MB)</label>
+                <input type="file" id="broadcast-file" style="display: none;" accept="image/*,video/mp4,audio/*,.pdf,.doc,.docx,.zip,.rar">
+                <span id="broadcast-file-name" style="color:var(--text-secondary); font-size: 0.85rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Tidak ada file dipilih</span>
+                <button id="broadcast-file-clear" class="action-btn" style="background:transparent; color:var(--accent-rose); border:1px solid var(--accent-rose); display:none; padding:4px 8px; width:auto; font-size:0.8rem;" onclick="clearBroadcastFile()">Hapus File</button>
+              </div>
             </div>
             <button id="send-broadcast-btn" class="action-btn ban-btn" style="background:var(--accent-blue); width:auto; margin-top:10px;" onclick="sendBroadcast()">🚀 Kirim Siaran Sekarang</button>
           </div>

@@ -22,13 +22,52 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === 'POST') {
-      const { message } = req.body || {};
-      if (!message || message.trim() === '') {
-        return res.status(400).json({ error: 'Pesan tidak boleh kosong' });
+      const { message, media } = req.body || {};
+      if (!message && !media) {
+        return res.status(400).json({ error: 'Pesan atau media tidak boleh kosong' });
       }
 
-      // Gunakan ID admin semu untuk aksi dari web dashboard jika tidak login dengan Telegram admin ID
       const adminId = (config.ADMIN_IDS && config.ADMIN_IDS.length > 0) ? config.ADMIN_IDS[0] : 0;
+      if (media && (!adminId || adminId === 0)) {
+        return res.status(400).json({ error: 'Admin ID belum diatur di pengaturan. Siaran media memerlukan Admin ID.' });
+      }
+      
+      let finalMessage = message;
+      
+      if (media && adminId) {
+        try {
+          const buffer = Buffer.from(media.data, 'base64');
+          const formData = new FormData();
+          const isPhoto = media.type.startsWith('image/');
+          const method = isPhoto ? 'sendPhoto' : 'sendDocument';
+          
+          formData.append('chat_id', adminId);
+          if (message) formData.append('caption', message);
+          
+          const blob = new Blob([buffer], { type: media.type });
+          formData.append(isPhoto ? 'photo' : 'document', blob, media.name);
+
+          const tgRes = await fetch(`https://api.telegram.org/bot${config.MAIN_BOT_TOKEN}/${method}`, {
+            method: 'POST',
+            body: formData
+          });
+          const tgData = await tgRes.json();
+          
+          if (tgData.ok && tgData.result.message_id) {
+            finalMessage = JSON.stringify({
+              type: 'copy',
+              message_id: tgData.result.message_id,
+              caption: message
+            });
+          } else {
+            console.error('Telegram API error:', tgData);
+            return res.status(500).json({ error: 'Gagal mengunggah media ke Telegram' });
+          }
+        } catch (e) {
+          console.error('Upload media error:', e);
+          return res.status(500).json({ error: 'Gagal memproses media' });
+        }
+      }
 
       // Create broadcast job
       const targets = await database.listBroadcastTargets(1, 1);
@@ -38,7 +77,7 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: 'Tidak ada pengguna aktif untuk menerima siaran.' });
       }
 
-      const jobId = await database.createBroadcastJob(adminId, message, totalTarget);
+      const jobId = await database.createBroadcastJob(adminId, finalMessage || 'Media Broadcast', totalTarget);
 
       // Trigger broadcast engine via webhook by sending a fake update
       const webhookUrl = config.WEBHOOK_URL;
