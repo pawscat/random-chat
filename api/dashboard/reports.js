@@ -56,7 +56,7 @@ module.exports = async (req, res) => {
 
       let result;
       if (type === 'pending') {
-        result = await database.listReportsByStatus('submitted', page, limit);
+        result = await database.listReportsByStatuses('submitted', 'pending_evidence', page, limit);
       } else if (type === 'claimed') {
         result = await database.listReportsByStatus('under_review', page, limit);
       } else if (type === 'handled') {

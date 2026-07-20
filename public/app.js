@@ -208,6 +208,7 @@ async function loadReports(type = 'pending') {
       else if (r.status === 'under_review') statusHtml = '<span class="report-status claimed">Direview</span>';
       else if (r.status === 'resolved') statusHtml = '<span class="report-status resolved">Selesai</span>';
       else if (r.status === 'banned') statusHtml = '<span class="report-status banned">Banned</span>';
+      else if (r.status === 'pending_evidence') statusHtml = '<span class="report-status" style="background:#f59e0b;color:white;">Draft / Menunggu Bukti</span>';
       else statusHtml = `<span class="report-status">${r.status}</span>`;
 
       const imgHtml = r.evidence_photo_file_id 
