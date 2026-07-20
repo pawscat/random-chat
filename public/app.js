@@ -239,7 +239,7 @@ async function loadReports(type = 'pending') {
       return `
         <div class="report-item" style="animation-delay: ${index * 0.05}s; animation: fadeSlideUp 0.4s ease-out forwards; opacity: 0; transform: translateY(10px);">
           <div class="report-header">
-            <div>
+            <div class="report-header-title">
               <span class="report-id">#${(r.report_id||'').substring(0,6)}</span>
               ${statusBadge}
             </div>
