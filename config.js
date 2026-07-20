@@ -1,20 +1,33 @@
 'use strict';
 
 module.exports = {
-  MAIN_BOT_TOKEN: '8356605064:AAHHbsnwpxQDAL4iCCxPmxATDtYzjiwNwKo',
-  REPORT_BOT_TOKEN: '8333226823:AAEZ0c1QDfXGRXZMTNo7VY79GaEFbaMnuMA',
+  // =========================================================================
+  // CATATAN PENTING:
+  // Sebagian besar nilai di bawah ini sekarang HANYA berfungsi sebagai nilai 
+  // AWAL (fallback) saat bot pertama kali dijalankan.
+  // Setelah itu, nilai-nilai ini akan DITIMPA oleh pengaturan dinamis yang
+  // disimpan di Database dan bisa diubah langsung melalui Web Dashboard!
+  // =========================================================================
 
-  // Konfigurasi Database Turso & Vercel
-  TURSO_DATABASE_URL: 'libsql://random-chat-db-pawscat.aws-ap-northeast-1.turso.io',
-  TURSO_AUTH_TOKEN: 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODQyMjQ5NDIsImlkIjoiMDE5ZjZjMTctOTkwMS03ZGVhLTg0M2EtOWU3NGY3NGI4NTIyIiwia2lkIjoiamdpLVVsSndJNTBlekhuNUpiTDVfd214TmQ1QURJeHBldjNZemwxVlpybyIsInJpZCI6IjY1NmY0NDMwLTkyYTctNGZmMy05YTA1LTM2OGRkYjc5NjNiMSJ9._xLpqYWRxKUTVbR7wnarEhcSNxCJUT737yWiQx2wwcWR-3_NWfQpE6Ef7wffQFEkXlBQHKuPBXRKRp-p952ECw',
-  WEBHOOK_URL: 'https://random-chat-nu.vercel.app/api/webhook',
+  MAIN_BOT_TOKEN: process.env.MAIN_BOT_TOKEN || '8356605064:AAHHbsnwpxQDAL4iCCxPmxATDtYzjiwNwKo',
+  REPORT_BOT_TOKEN: process.env.REPORT_BOT_TOKEN || '8333226823:AAEZ0c1QDfXGRXZMTNo7VY79GaEFbaMnuMA',
 
+  // Konfigurasi Database Turso (Wajib tetap ada di config/env untuk koneksi awal)
+  TURSO_DATABASE_URL: process.env.TURSO_DATABASE_URL || 'libsql://random-chat-db-pawscat.aws-ap-northeast-1.turso.io',
+  TURSO_AUTH_TOKEN: process.env.TURSO_AUTH_TOKEN || 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODQyMjQ5NDIsImlkIjoiMDE5ZjZjMTctOTkwMS03ZGVhLTg0M2EtOWU3NGY3NGI4NTIyIiwia2lkIjoiamdpLVVsSndJNTBlekhuNUpiTDVfd214TmQ1QURJeHBldjNZemwxVlpybyIsInJpZCI6IjY1NmY0NDMwLTkyYTctNGZmMy05YTA1LTM2OGRkYjc5NjNiMSJ9._xLpqYWRxKUTVbR7wnarEhcSNxCJUT737yWiQx2wwcWR-3_NWfQpE6Ef7wffQFEkXlBQHKuPBXRKRp-p952ECw',
+  
+  WEBHOOK_URL: process.env.WEBHOOK_URL || 'https://random-chat-nu.vercel.app/api/webhook',
   DB_FILE: 'bot_data.sqlite',
-  DASHBOARD_PASSWORD: 'adminrahasia', // Password login web dashboard
+  DASHBOARD_PASSWORD: process.env.DASHBOARD_PASSWORD || 'adminrahasia',
+
+  // Pengaturan Bot (Bisa diubah via Dashboard)
   MAIN_BOT_USERNAME: 'randomchating_bot',
   REPORT_BOT_USERNAME: 'randomreport_bot',
   ADMIN_IDS: [8637897098, 6255931724],
+  
+  // Super Admin bersifat hardcoded demi keamanan (tidak bisa ditimpa via web)
   SUPER_ADMIN_IDS: [8637897098],
+  
   BOT_NAME: 'Random Chatting Bot',
   REPORT_LIMIT_PER_DAY: 3,
   REPORT_COOLDOWN_MS: 60 * 1000,
