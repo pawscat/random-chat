@@ -111,7 +111,7 @@ async function loadStats() {
 
     const s = data.stats;
     $('#stat-total-users .stat-value').textContent = s.totalUsers ?? '—';
-    $('#stat-active-users .stat-value').textContent = s.totalActive ?? '—';
+    $('#stat-active-users .stat-value').textContent = s.totalOnline ?? '—';
     $('#stat-waiting .stat-value').textContent = s.totalWaiting ?? '—';
     $('#stat-chatting .stat-value').textContent = s.totalActiveChats ?? '—';
     $('#stat-banned .stat-value').textContent = s.totalBanned ?? '—';
@@ -125,6 +125,11 @@ async function loadStats() {
     $('#server-uptime .server-card-value').textContent = sys.uptime;
     $('#server-env .server-card-value').textContent = sys.environment;
     $('#server-node .server-card-value').textContent = sys.node;
+
+    // Cache settings from the same response
+    if (data.settings) {
+      window._cachedSettings = data.settings;
+    }
 
     $('#last-updated').textContent = `Diperbarui: ${new Date().toLocaleTimeString('id-ID')}`;
   } catch (err) {
@@ -168,22 +173,23 @@ async function loadUsers(type = 'all') {
 }
 
 async function loadSettings() {
-  // Settings are loaded from the stats endpoint system info
-  // plus we show known config values from the page
   try {
-    const data = await apiGet('stats');
-    if (!data.success) return;
+    // Use cached settings from loadStats, or fetch fresh
+    let settings = window._cachedSettings;
+    if (!settings) {
+      const data = await apiGet('stats');
+      if (!data.success) return;
+      settings = data.settings;
+    }
 
-    // We'll just display what we know from config
-    // The actual config values need a dedicated endpoint, so let's show system info
-    $('#setting-main-bot').textContent = '@randomchating_bot';
-    $('#setting-report-bot').textContent = '@randomreport_bot';
-    $('#setting-webhook').textContent = 'random-chat-nu.vercel.app';
-    $('#setting-admin-ids').textContent = 'Configured';
-    $('#setting-superadmin-ids').textContent = 'Configured';
-    $('#setting-rate-window').textContent = '3000ms';
-    $('#setting-rate-max').textContent = '5 pesan';
-    $('#setting-report-length').textContent = '700 karakter';
+    $('#setting-main-bot').textContent = settings.mainBot || '—';
+    $('#setting-report-bot').textContent = settings.reportBot || '—';
+    $('#setting-webhook').textContent = settings.webhookUrl || '—';
+    $('#setting-admin-ids').textContent = (settings.adminIds || []).join(', ');
+    $('#setting-superadmin-ids').textContent = (settings.superAdminIds || []).join(', ');
+    $('#setting-rate-window').textContent = settings.rateLimitWindow || '—';
+    $('#setting-rate-max').textContent = settings.rateLimitMax || '—';
+    $('#setting-report-length').textContent = settings.maxReportDescLength || '—';
   } catch (err) {
     console.error('loadSettings error:', err);
   }
