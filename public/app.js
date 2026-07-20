@@ -333,6 +333,10 @@ async function saveSettings() {
 
     const data = await apiPost('settings', updates);
     if (data.success) {
+      if (updates.DASHBOARD_PASSWORD && updates.DASHBOARD_PASSWORD !== authToken) {
+        authToken = updates.DASHBOARD_PASSWORD;
+        sessionStorage.setItem('dashToken', authToken);
+      }
       showToast('Pengaturan berhasil disimpan!', 'success');
     } else {
       showToast(data.error || 'Gagal menyimpan pengaturan.', 'error');

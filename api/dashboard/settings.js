@@ -8,14 +8,16 @@ module.exports = async (req, res) => {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const token = req.headers['authorization'] || req.query.token;
-  if (token !== config.DASHBOARD_PASSWORD) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  
 
   try {
     // Muat setting terbaru dari DB
     await config.loadDynamicConfig(database);
+
+    const token = req.headers['authorization'] || req.query.token;
+    if (token !== config.DASHBOARD_PASSWORD) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
 
     if (req.method === 'GET') {
       // Return the current resolved configuration

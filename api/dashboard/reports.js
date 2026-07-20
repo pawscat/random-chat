@@ -10,13 +10,15 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
 
-  const token = req.headers['authorization'] || req.query.token;
-  if (token !== config.DASHBOARD_PASSWORD) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  
 
   try {
     await config.loadDynamicConfig(database);
+
+    const token = req.headers['authorization'] || req.query.token;
+    if (token !== config.DASHBOARD_PASSWORD) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
 
     // Proxy foto evidence dari Telegram
     if (req.method === 'GET' && req.query.photo === '1' && req.query.file_id) {

@@ -13,13 +13,15 @@ module.exports = async (req, res) => {
   }
 
   // Authentication check
-  const token = req.headers['authorization'] || req.query.token;
-  if (token !== config.DASHBOARD_PASSWORD) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  
 
   try {
     await config.loadDynamicConfig(database);
+
+    const token = req.headers['authorization'] || req.query.token;
+    if (token !== config.DASHBOARD_PASSWORD) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     const userStats = await database.getUserStats(config.ACTIVE_USER_WINDOW_MS);
     const reportStats = await database.countReportsByStatus();
 

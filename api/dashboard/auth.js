@@ -1,4 +1,5 @@
 const config = require('../../config');
+const database = require('../../database');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,6 +15,7 @@ module.exports = async (req, res) => {
   }
 
   try {
+    await config.loadDynamicConfig(database);
     const { password } = req.body || {};
     if (password === config.DASHBOARD_PASSWORD) {
       return res.status(200).json({ success: true, token: 'authenticated' });
