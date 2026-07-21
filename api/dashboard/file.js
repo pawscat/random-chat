@@ -37,11 +37,24 @@ module.exports = async (req, res) => {
 
     const url = `https://api.telegram.org/file/bot${cachedConfig.MAIN_BOT_TOKEN}/${file.file_path}`;
     
+    const options = { headers: {} };
+    if (req.headers.range) {
+      options.headers['Range'] = req.headers.range;
+    }
+
     // Proxy (pipe) request ke Telegram
-    https.get(url, (proxyRes) => {
-      // Set header yang relevan dari response Telegram
-      if (proxyRes.headers['content-type']) res.setHeader('Content-Type', proxyRes.headers['content-type']);
-      if (proxyRes.headers['content-length']) res.setHeader('Content-Length', proxyRes.headers['content-length']);
+    https.get(url, options, (proxyRes) => {
+      // Set status code (200 atau 206 Partial Content)
+      res.status(proxyRes.statusCode);
+
+      // Set header yang relevan dari response Telegram untuk mendukung pemutaran video/audio
+      const headersToForward = ['content-type', 'content-length', 'accept-ranges', 'content-range'];
+      headersToForward.forEach(header => {
+        if (proxyRes.headers[header]) {
+          res.setHeader(header, proxyRes.headers[header]);
+        }
+      });
+      
       res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache di browser 1 hari
       
       proxyRes.pipe(res);
