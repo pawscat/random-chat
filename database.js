@@ -102,6 +102,13 @@ async function initDB() {
       status TEXT NOT NULL DEFAULT 'running',
       created_at INTEGER NOT NULL
     );
+    
+    CREATE TABLE IF NOT EXISTS admin_steps (
+      user_id INTEGER PRIMARY KEY,
+      step TEXT NOT NULL,
+      payload TEXT,
+      updated_at INTEGER NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS runtime_state (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
@@ -367,6 +374,11 @@ const queries = {
   `,
 
   // Shared store replacements
+  
+  getAdminStep: 'SELECT * FROM admin_steps WHERE user_id = ?',
+  setAdminStep: 'INSERT INTO admin_steps (user_id, step, payload, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET step=excluded.step, payload=excluded.payload, updated_at=excluded.updated_at',
+  deleteAdminStep: 'DELETE FROM admin_steps WHERE user_id = ?',
+
   getReportStep: 'SELECT * FROM report_steps WHERE user_id = ?',
   setReportStep: `
     INSERT INTO report_steps (user_id, report_id, step, updated_at)
@@ -920,6 +932,20 @@ function generateReportId() {
   return `R${Date.now().toString(36).toUpperCase()}${rand}`;
 }
 
+
+async function getAdminStep(userId) {
+  const res = await client.execute({ sql: queries.getAdminStep, args: [Number(userId)] });
+  return res.rows.length > 0 ? res.rows[0] : null;
+}
+
+async function setAdminStep(userId, step, payload = null) {
+  await client.execute({ sql: queries.setAdminStep, args: [Number(userId), String(step), payload ? String(payload) : null, Date.now()] });
+}
+
+async function deleteAdminStep(userId) {
+  await client.execute({ sql: queries.deleteAdminStep, args: [Number(userId)] });
+}
+
 async function getReportStep(userId) {
   const res = await client.execute({ sql: queries.getReportStep, args: [Number(userId)] });
   return res.rows[0] ? { reportId: res.rows[0].report_id, step: res.rows[0].step } : null;
@@ -986,7 +1012,7 @@ module.exports = {
   resolveReport, rejectReport, markReportBanned, deleteReport, countReportsByStatus: countReportsByStatusMap,
   countReportsByUser, countReportsAgainstUser, canCreateReport, recordReportCreated,
   resetReportWindowIfNeeded, logAdminAction, logBroadcast, listBroadcastTargets,
-  getReportStep, setReportStep, deleteReportStep, getMessageRateLimit, setMessageRateLimit,
+  getAdminStep, setAdminStep, deleteAdminStep, getReportStep, setReportStep, deleteReportStep, getMessageRateLimit, setMessageRateLimit,
   getRuntimeState, setRuntimeState, createBroadcastJob, getBroadcastJob, updateBroadcastJobProgress, finishBroadcastJob,
   listBroadcastJobs, generateReportId, deleteUser
 };

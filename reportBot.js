@@ -167,6 +167,33 @@ function startReportBot() {
     const chatId = query.message.chat.id;
     const msgId = query.message.message_id;
 
+    if (isAdmin(userId) && query.data.startsWith('admin_cmd_')) {
+      const cmd = query.data.replace('admin_cmd_', '');
+      bot.processUpdate({ update_id: Date.now(), message: { message_id: Date.now(), from: query.from, chat: query.message.chat, date: Math.floor(Date.now() / 1000), text: cmd } });
+      await bot.answerCallbackQuery(query.id);
+      return;
+    } else if (isAdmin(userId) && query.data.startsWith('admin_prompt_')) {
+      const cmd = query.data.replace('admin_prompt_', '');
+      let text = '';
+      let stepName = '';
+      if (cmd === '/claim') { text = 'Kirimkan Report ID yang ingin diklaim:'; stepName = 'awaiting_claim_id'; }
+      if (cmd === '/resolve') { text = 'Kirimkan Report ID yang ingin diselesaikan:\n(Anda akan diminta memberi catatan setelah ini)'; stepName = 'awaiting_resolve_id'; }
+      if (cmd === '/reject') { text = 'Kirimkan Report ID yang ingin ditolak:\n(Anda akan diminta alasan setelah ini)'; stepName = 'awaiting_reject_id'; }
+      if (cmd === '/banreported') { text = 'Kirimkan Report ID untuk mem-banned pelakunya:'; stepName = 'awaiting_banreported_id'; }
+      
+      if (stepName) {
+        await setAdminStep(userId, stepName);
+        await safeSendMessage(chatId, text, { reply_markup: { force_reply: true } });
+      }
+      await bot.answerCallbackQuery(query.id);
+      return;
+    } else if (isAdmin(userId) && query.data === 'admin_cancel_step') {
+      await deleteAdminStep(userId);
+      await safeSendMessage(chatId, 'Operasi dibatalkan.');
+      await bot.answerCallbackQuery(query.id);
+      return;
+    }
+
     if (query.data.startsWith('viol_')) {
       const idx = parseInt(query.data.split('_')[1], 10);
       const violationType = config.REPORT_VIOLATION_TYPES[idx];
@@ -251,9 +278,59 @@ function startReportBot() {
 
   bot.on('message', runSafely(async (msg) => {
     if (!msg.from || !msg.chat || msg.chat.type !== 'private') return;
-    if (msg.text && msg.text.startsWith('/')) return;
-
     const userId = Number(msg.from.id);
+
+    const adminStep = isAdmin(userId) ? await getAdminStep(userId) : null;
+    if (adminStep) {
+      if (msg.text && msg.text.startsWith('/')) {
+        await deleteAdminStep(userId);
+        if (msg.text === '/cancel') {
+          await safeSendMessage(msg.chat.id, 'Operasi dibatalkan.');
+          return;
+        }
+      } else {
+        if (adminStep.step === 'awaiting_claim_id') {
+          if (!msg.text) { await deleteAdminStep(userId); return; }
+          bot.processUpdate({ update_id: Date.now(), message: { message_id: Date.now(), from: msg.from, chat: msg.chat, date: Math.floor(Date.now() / 1000), text: `/claim ${msg.text}` }});
+          await deleteAdminStep(userId);
+          return;
+        }
+        if (adminStep.step === 'awaiting_resolve_id') {
+          if (!msg.text) { await deleteAdminStep(userId); return; }
+          await setAdminStep(userId, 'awaiting_resolve_note', msg.text);
+          await safeSendMessage(msg.chat.id, 'Kirimkan catatan penyelesaian (note):', { reply_markup: { force_reply: true } });
+          return;
+        }
+        if (adminStep.step === 'awaiting_resolve_note') {
+          if (!msg.text) { await deleteAdminStep(userId); return; }
+          const targetId = adminStep.payload;
+          bot.processUpdate({ update_id: Date.now(), message: { message_id: Date.now(), from: msg.from, chat: msg.chat, date: Math.floor(Date.now() / 1000), text: `/resolve ${targetId} ${msg.text}` }});
+          await deleteAdminStep(userId);
+          return;
+        }
+        if (adminStep.step === 'awaiting_reject_id') {
+          if (!msg.text) { await deleteAdminStep(userId); return; }
+          await setAdminStep(userId, 'awaiting_reject_reason', msg.text);
+          await safeSendMessage(msg.chat.id, 'Kirimkan alasan penolakan:', { reply_markup: { force_reply: true } });
+          return;
+        }
+        if (adminStep.step === 'awaiting_reject_reason') {
+          if (!msg.text) { await deleteAdminStep(userId); return; }
+          const targetId = adminStep.payload;
+          bot.processUpdate({ update_id: Date.now(), message: { message_id: Date.now(), from: msg.from, chat: msg.chat, date: Math.floor(Date.now() / 1000), text: `/reject ${targetId} ${msg.text}` }});
+          await deleteAdminStep(userId);
+          return;
+        }
+        if (adminStep.step === 'awaiting_banreported_id') {
+          if (!msg.text) { await deleteAdminStep(userId); return; }
+          bot.processUpdate({ update_id: Date.now(), message: { message_id: Date.now(), from: msg.from, chat: msg.chat, date: Math.floor(Date.now() / 1000), text: `/banreported ${msg.text}` }});
+          await deleteAdminStep(userId);
+          return;
+        }
+      }
+    }
+
+    if (msg.text && msg.text.startsWith('/')) return;
     const draft = await getReportStep(userId);
     if (!draft) return;
 
@@ -296,16 +373,19 @@ function startReportBot() {
 
   bot.onText(/^\/admin(?:@\w+)?$/i, runSafely(async (msg) => {
     if (!msg.from || !isAdmin(msg.from.id)) return;
-    const adminHelp = [
-      '🛠 <b>Daftar Perintah Report Bot (Admin):</b>',
-      '<code>/reports</code> - Lihat semua laporan (Pending & Claimed)',
-      '<code>/nextreport</code> - Ambil antrean laporan terlama',
-      '<code>/claim ID</code> - Ambil spesifik laporan berdasarkan ID',
-      '<code>/resolve ID catatan</code> - Tandai laporan selesai dengan catatan',
-      '<code>/reject ID alasan</code> - Tolak laporan karena tidak valid',
-      '<code>/banreported ID</code> - Banned pelaku dan selesaikan laporan'
-    ].join('\n');
-    await safeSendMessage(msg.chat.id, adminHelp, { parse_mode: 'HTML' });
+    const adminHelp = '🛠 <b>Panel Admin Report Bot:</b>\nPilih aksi yang ingin dilakukan:';
+    
+    const inlineKeyboard = [
+      [{ text: '📋 Lihat Semua Laporan', callback_data: 'admin_cmd_/reports' }],
+      [{ text: '⏭️ Proses Laporan Berikutnya', callback_data: 'admin_cmd_/nextreport' }],
+      [{ text: '✋ Claim Laporan', callback_data: 'admin_prompt_/claim' }, { text: '✅ Resolve Laporan', callback_data: 'admin_prompt_/resolve' }],
+      [{ text: '❌ Reject Laporan', callback_data: 'admin_prompt_/reject' }, { text: '🔨 Ban Pelaku', callback_data: 'admin_prompt_/banreported' }]
+    ];
+    
+    await safeSendMessage(msg.chat.id, adminHelp, {
+      parse_mode: 'HTML',
+      reply_markup: { inline_keyboard: inlineKeyboard }
+    });
   }));
 
   bot.onText(/^\/reports(?:@\w+)?$/i, runSafely(async (msg) => {

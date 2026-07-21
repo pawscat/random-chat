@@ -14,7 +14,7 @@ const {
   countReportsByUser, countReportsAgainstUser, canCreateReport, recordReportCreated,
   logAdminAction, logBroadcast, listBroadcastTargets, getMessageRateLimit, setMessageRateLimit,
   getRuntimeState, setRuntimeState, createBroadcastJob, getBroadcastJob, updateBroadcastJobProgress,
-  finishBroadcastJob, generateReportId
+  finishBroadcastJob, generateReportId, getAdminStep, setAdminStep, deleteAdminStep
 } = database;
 
 function startMainBot() {
@@ -701,6 +701,54 @@ function startMainBot() {
   bot.on('message', runSafely(async (msg) => {
     if (!msg.from || !msg.chat || msg.chat.type !== 'private') return;
     await touchUser(Number(msg.from.id), msg.from);
+    const userId = Number(msg.from.id);
+    const adminStep = isAdmin(userId) ? await getAdminStep(userId) : null;
+    
+    if (adminStep) {
+      if (msg.text && msg.text.startsWith('/')) {
+        await deleteAdminStep(userId);
+        if (msg.text === '/cancel') {
+          await safeSendMessage(msg.chat.id, 'Operasi dibatalkan.');
+          return;
+        }
+        // continue if it's another command
+      } else {
+        if (adminStep.step === 'awaiting_broadcast_msg') {
+          if (!msg.text) { await safeSendMessage(msg.chat.id, 'Pesan dibatalkan (hanya teks didukung di bot, gunakan web untuk media).'); }
+          else {
+            bot.processUpdate({ update_id: Date.now(), message: { message_id: Date.now(), from: msg.from, chat: msg.chat, date: Math.floor(Date.now() / 1000), text: `/broadcast ${msg.text}` }});
+          }
+          await deleteAdminStep(userId);
+          return;
+        }
+        if (adminStep.step === 'awaiting_ban_id') {
+          if (!msg.text) { await safeSendMessage(msg.chat.id, 'Dibatalkan.'); await deleteAdminStep(userId); return; }
+          await setAdminStep(userId, 'awaiting_ban_reason', msg.text);
+          await safeSendMessage(msg.chat.id, 'Kirimkan alasan ban:', { reply_markup: { force_reply: true } });
+          return;
+        }
+        if (adminStep.step === 'awaiting_ban_reason') {
+          if (!msg.text) { await safeSendMessage(msg.chat.id, 'Dibatalkan.'); await deleteAdminStep(userId); return; }
+          const targetId = adminStep.payload;
+          bot.processUpdate({ update_id: Date.now(), message: { message_id: Date.now(), from: msg.from, chat: msg.chat, date: Math.floor(Date.now() / 1000), text: `/ban ${targetId} ${msg.text}` }});
+          await deleteAdminStep(userId);
+          return;
+        }
+        if (adminStep.step === 'awaiting_unban_id') {
+          if (!msg.text) { await safeSendMessage(msg.chat.id, 'Dibatalkan.'); await deleteAdminStep(userId); return; }
+          bot.processUpdate({ update_id: Date.now(), message: { message_id: Date.now(), from: msg.from, chat: msg.chat, date: Math.floor(Date.now() / 1000), text: `/unban ${msg.text}` }});
+          await deleteAdminStep(userId);
+          return;
+        }
+        if (adminStep.step === 'awaiting_userinfo_id') {
+          if (!msg.text) { await safeSendMessage(msg.chat.id, 'Dibatalkan.'); await deleteAdminStep(userId); return; }
+          bot.processUpdate({ update_id: Date.now(), message: { message_id: Date.now(), from: msg.from, chat: msg.chat, date: Math.floor(Date.now() / 1000), text: `/userinfo ${msg.text}` }});
+          await deleteAdminStep(userId);
+          return;
+        }
+      }
+    }
+
     if (msg.text && msg.text.startsWith('/')) return;
     await forwardAnonymousMessage(msg);
   }));
@@ -734,11 +782,20 @@ function startMainBot() {
     } else if (data.startsWith('admin_prompt_')) {
       const cmd = data.replace('admin_prompt_', '');
       let text = '';
-      if (cmd === '/userinfo') text = 'Silakan ketik perintah: <code>/userinfo &lt;user_id&gt;</code>';
-      if (cmd === '/broadcast') text = 'Untuk siaran teks, ketik: <code>/broadcast pesan_anda</code>\n\nAtau gunakan Web Dashboard untuk siaran media.';
-      if (cmd === '/ban') text = 'Silakan ketik perintah: <code>/ban &lt;user_id&gt; [alasan]</code>';
+      let stepName = '';
+      if (cmd === '/userinfo') { text = 'Kirimkan User ID untuk melihat infonya:'; stepName = 'awaiting_userinfo_id'; }
+      if (cmd === '/broadcast') { text = 'Kirimkan pesan teks yang ingin di-broadcast ke semua user:\n(Gunakan Web Dashboard untuk broadcast media)'; stepName = 'awaiting_broadcast_msg'; }
+      if (cmd === '/ban') { text = 'Kirimkan User ID yang ingin di-ban:\n(Anda akan diminta alasan setelah ini)'; stepName = 'awaiting_ban_id'; }
+      if (cmd === '/unban') { text = 'Kirimkan User ID yang ingin di-unban:'; stepName = 'awaiting_unban_id'; }
       
-      await safeSendMessage(msg.chat.id, text, { parse_mode: 'HTML' });
+      if (stepName) {
+        await setAdminStep(fromId, stepName);
+        await safeSendMessage(msg.chat.id, text, { reply_markup: { force_reply: true }});
+      }
+      await bot.answerCallbackQuery(callbackQuery.id);
+    } else if (data === 'admin_cancel_step') {
+      await deleteAdminStep(fromId);
+      await safeSendMessage(msg.chat.id, 'Operasi dibatalkan.');
       await bot.answerCallbackQuery(callbackQuery.id);
     }
   }));
