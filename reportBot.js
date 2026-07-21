@@ -149,6 +149,51 @@ function startReportBot() {
     };
   }
 
+
+  const getViolationKeyboard = () => {
+    const keyboard = [];
+    let row = [];
+    config.REPORT_VIOLATION_TYPES.forEach((v, idx) => {
+      row.push({ text: v, callback_data: 'viol_' + idx });
+      if (row.length === 2) { keyboard.push(row); row = []; }
+    });
+    if (row.length > 0) keyboard.push(row);
+    return { reply_markup: { inline_keyboard: keyboard } };
+  };
+
+  bot.on('callback_query', runSafely(async (query) => {
+    if (!query.data || !query.message) return;
+    const userId = Number(query.from.id);
+    const chatId = query.message.chat.id;
+    const msgId = query.message.message_id;
+
+    if (query.data.startsWith('viol_')) {
+      const idx = parseInt(query.data.split('_')[1], 10);
+      const violationType = config.REPORT_VIOLATION_TYPES[idx];
+      if (!violationType) return;
+
+      const draft = await getReportStep(userId);
+      if (!draft || draft.step !== 'awaiting_violation') {
+        await bot.answerCallbackQuery(query.id, { text: 'Sesi report tidak valid.' });
+        return;
+      }
+
+      if (violationType.toLowerCase() === 'lainnya') {
+        await setReportStep(userId, draft.reportId, 'awaiting_custom_violation');
+        await bot.editMessageText('Silakan ketik manual jenis pelanggarannya:', { chat_id: chatId, message_id: msgId });
+        await bot.answerCallbackQuery(query.id);
+        return;
+      }
+
+      await updateReportViolationType(draft.reportId, violationType);
+      await submitReport(draft.reportId);
+      await deleteReportStep(userId);
+      await bot.editMessageText('Jenis pelanggaran: ' + violationType + '\n\nReport ' + draft.reportId + ' disubmit.', { chat_id: chatId, message_id: msgId });
+      await bot.answerCallbackQuery(query.id);
+      await notifyAdminsNewReport();
+    }
+  }));
+
   bot.onText(/^\/start(?:@\w+)?(?:\s+(.+))?$/i, runSafely(async (msg, match) => {
     if (!msg.from) return;
     const userId = Number(msg.from.id);
@@ -181,7 +226,7 @@ function startReportBot() {
     if (step === 'awaiting_photo') await safeSendMessage(msg.chat.id, `Report ${reportId} aktif. Kirim screenshot bukti (foto).`);
     else if (step === 'awaiting_description') await safeSendMessage(msg.chat.id, `Kirim penjelasan singkat pelanggaran.`);
     else {
-      await safeSendMessage(msg.chat.id, ['Pilih jenis pelanggaran:', ...config.REPORT_VIOLATION_TYPES.map(v => `- ${v}`)].join('\n'));
+      await safeSendMessage(msg.chat.id, 'Pilih jenis pelanggaran:', getViolationKeyboard());
     }
   }));
 
@@ -226,18 +271,22 @@ function startReportBot() {
       }
       await updateReportDescription(draft.reportId, desc);
       await setReportStep(userId, draft.reportId, 'awaiting_violation');
-      await safeSendMessage(msg.chat.id, ['Pilih jenis pelanggaran:', ...config.REPORT_VIOLATION_TYPES.map(v => `- ${v}`)].join('\n'));
+      await safeSendMessage(msg.chat.id, 'Pilih jenis pelanggaran:', getViolationKeyboard());
       return;
     }
 
     if (draft.step === 'awaiting_violation') {
-      const lowerInput = sanitizeInput(msg.text || '', 100).toLowerCase();
-      const violationType = config.REPORT_VIOLATION_TYPES.find(v => v.toLowerCase() === lowerInput);
-      if (!violationType) {
-        await safeSendMessage(msg.chat.id, 'Jenis pelanggaran tidak valid.');
+      await safeSendMessage(msg.chat.id, 'Silakan pilih jenis pelanggaran menggunakan tombol di atas.');
+      return;
+    }
+
+    if (draft.step === 'awaiting_custom_violation') {
+      const customViolation = sanitizeInput(msg.text || '', 100);
+      if (customViolation.length < 3) {
+        await safeSendMessage(msg.chat.id, 'Jenis pelanggaran terlalu singkat.');
         return;
       }
-      await updateReportViolationType(draft.reportId, violationType);
+      await updateReportViolationType(draft.reportId, customViolation);
       await submitReport(draft.reportId);
       await deleteReportStep(userId);
       await safeSendMessage(msg.chat.id, `Report ${draft.reportId} disubmit.`);
