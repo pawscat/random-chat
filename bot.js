@@ -101,19 +101,21 @@ function startMainBot() {
     return page;
   }
 
+  const rateLimitCache = new Map();
+  
   async function checkRateLimit(userId) {
     const uid = Number(userId);
     const now = Date.now();
     const windowMs = config.USER_MESSAGE_RATE_LIMIT.windowMs;
     const maxMessages = config.USER_MESSAGE_RATE_LIMIT.maxMessages;
     
-    let entry = await getMessageRateLimit(uid);
+    let entry = rateLimitCache.get(uid);
     if (!entry || now - entry.windowStart > windowMs) {
-      await setMessageRateLimit(uid, now, 1);
+      rateLimitCache.set(uid, { windowStart: now, count: 1 });
       return true;
     }
     if (entry.count >= maxMessages) return false;
-    await setMessageRateLimit(uid, entry.windowStart, entry.count + 1);
+    entry.count += 1;
     return true;
   }
 

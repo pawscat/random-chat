@@ -96,9 +96,13 @@ module.exports = {
   },
 
   // Fungsi untuk memuat pengaturan dinamis dari database
+  _lastLoaded: 0,
   loadDynamicConfig: async function(database) {
+    if (Date.now() - this._lastLoaded < 60000) return; // Cache selama 60 detik
+    
     try {
       const state = await database.getRuntimeState('dynamic_settings');
+      this._lastLoaded = Date.now();
       if (state) {
         const parsed = JSON.parse(state);
         for (const key in parsed) {
