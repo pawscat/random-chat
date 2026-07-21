@@ -364,7 +364,22 @@ function startMainBot() {
       await safeSendMessage(msg.chat.id, 'Perintah ini hanya untuk admin.');
       return;
     }
-    await safeSendMessage(msg.chat.id, getAdminCommandsHelp());
+    
+    const opts = {
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: '📊 Statistik', callback_data: 'admin_cmd_/stats' }, { text: '🖥️ Server', callback_data: 'admin_cmd_/server' }],
+          [{ text: '👥 Semua User', callback_data: 'admin_cmd_/users' }, { text: '🟢 User Aktif', callback_data: 'admin_cmd_/activeusers' }],
+          [{ text: '⏳ Menunggu', callback_data: 'admin_cmd_/waitingusers' }, { text: '💬 Chatting', callback_data: 'admin_cmd_/chattingusers' }],
+          [{ text: '🚫 Diblokir', callback_data: 'admin_cmd_/banned' }, { text: 'ℹ️ Info User', callback_data: 'admin_prompt_/userinfo' }],
+          [{ text: '📢 Broadcast', callback_data: 'admin_prompt_/broadcast' }, { text: '🔨 Ban User', callback_data: 'admin_prompt_/ban' }],
+          [{ text: '🌐 Buka Web Dashboard', url: config.DASHBOARD_URL || 'https://random-chat-nu.vercel.app' }]
+        ]
+      }
+    };
+    
+    await safeSendMessage(msg.chat.id, '<b>🛠️ Panel Kontrol Admin</b>\nSilakan pilih menu di bawah ini atau ketik perintah secara manual:', opts);
   }));
 
   bot.onText(/^\/search(?:@\w+)?$/i, runSafely(async (msg) => {
@@ -693,6 +708,40 @@ function startMainBot() {
   bot.on('polling_error', (error) => {
     console.error('[MainBot] Polling error:', error?.message);
   });
+  bot.on('callback_query', runSafely(async (callbackQuery) => {
+    const msg = callbackQuery.message;
+    const data = callbackQuery.data;
+    const fromId = callbackQuery.from.id;
+
+    if (!isAdmin(fromId)) {
+      await bot.answerCallbackQuery(callbackQuery.id, { text: 'Akses ditolak.' });
+      return;
+    }
+
+    if (data.startsWith('admin_cmd_')) {
+      const cmd = data.replace('admin_cmd_', '');
+      bot.processUpdate({
+        update_id: Date.now(),
+        message: {
+          message_id: Date.now(),
+          from: callbackQuery.from,
+          chat: msg.chat,
+          date: Math.floor(Date.now() / 1000),
+          text: cmd
+        }
+      });
+      await bot.answerCallbackQuery(callbackQuery.id);
+    } else if (data.startsWith('admin_prompt_')) {
+      const cmd = data.replace('admin_prompt_', '');
+      let text = '';
+      if (cmd === '/userinfo') text = 'Silakan ketik perintah: <code>/userinfo &lt;user_id&gt;</code>';
+      if (cmd === '/broadcast') text = 'Untuk siaran teks, ketik: <code>/broadcast pesan_anda</code>\n\nAtau gunakan Web Dashboard untuk siaran media.';
+      if (cmd === '/ban') text = 'Silakan ketik perintah: <code>/ban &lt;user_id&gt; [alasan]</code>';
+      
+      await safeSendMessage(msg.chat.id, text, { parse_mode: 'HTML' });
+      await bot.answerCallbackQuery(callbackQuery.id);
+    }
+  }));
 
   return bot;
 }

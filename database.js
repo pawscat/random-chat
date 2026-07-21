@@ -972,7 +972,7 @@ async function updateBroadcastJobProgress(jobId, success, fail, skipped, page) {
 }
 
 async function finishBroadcastJob(jobId) {
-  await client.execute({ sql: queries.updateBroadcastJobProgress, finishBroadcastJob, args: [Number(jobId)] });
+  await client.execute({ sql: queries.finishBroadcastJob, args: [Number(jobId)] });
 }
 
 module.exports = {
