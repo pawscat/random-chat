@@ -529,6 +529,29 @@ async function banUser(userId, adminId, reason) {
   const now = Date.now();
   const safeReason = reason ? String(reason) : null;
   await client.execute({ sql: queries.banUser, args: [now, adminId != null ? Number(adminId) : null, safeReason, now, uid] });
+  
+  // Otomatis keluarkan dari antrean atau chat aktif jika ada
+  await client.execute({ sql: queries.removeWaitingUser, args: [uid] });
+  
+  const tx = await client.transaction('write');
+  try {
+    const res = await tx.execute({ sql: queries.getPartner, args: [uid] });
+    const row = res.rows[0];
+    await tx.execute({ sql: queries.removeActiveChatByUser, args: [uid] });
+    if (row && row.partner_id != null) {
+      const partnerId = Number(row.partner_id);
+      await tx.execute({ sql: queries.removeActiveChatByUser, args: [partnerId] });
+      await tx.execute({ sql: queries.updateUserStatus, args: ['idle', now, partnerId] });
+      await tx.execute({
+        sql: 'DELETE FROM active_chat_logs WHERE user_id = ? AND partner_id = ?',
+        args: [Math.min(uid, partnerId), Math.max(uid, partnerId)]
+      });
+    }
+    await tx.execute({ sql: queries.updateUserStatus, args: ['idle', now, uid] });
+    await tx.commit();
+  } catch(e) {
+    await tx.rollback();
+  }
 }
 
 async function unbanUser(userId) {

@@ -209,16 +209,15 @@ function startMainBot() {
       return;
     }
 
-    const partnerId = await getPartner(fromId);
+    // Ambil partner dan cek rate limit secara paralel (mempercepat respons)
+    const [partnerId, rateLimitOk] = await Promise.all([
+      getPartner(fromId),
+      checkRateLimit(fromId)
+    ]);
+    
     if (!partnerId) return;
 
-    if (await isBanned(partnerId)) {
-      await stopChat(fromId, { notifySelf: false, notifyPartner: false });
-      await safeSendMessage(fromId, 'Partner tidak tersedia lagi. Gunakan /search untuk mencari partner baru.');
-      return;
-    }
-
-    if (!await checkRateLimit(fromId)) {
+    if (!rateLimitOk) {
       await safeSendMessage(fromId, config.MESSAGES.rateLimitedMessage);
       return;
     }
@@ -243,7 +242,10 @@ function startMainBot() {
       else if (msg.animation) type = 'GIF';
       else if (!text) type = 'Media Lainnya';
       
-      await logChatMessage(fromId, partnerId, fromId, text, type);
+      // Jangan di-await agar webhook bisa langsung membalas, hindari delay!
+      bot.pendingPromises.push(
+        logChatMessage(fromId, partnerId, fromId, text, type).catch(console.error)
+      );
     }
   }
 
