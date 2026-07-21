@@ -34,6 +34,14 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === 'GET') {
+      if (req.query.action === 'view_logs') {
+        const uId = Number(req.query.userId);
+        const pId = Number(req.query.partnerId);
+        if (!uId || !pId) return res.status(400).json({ error: 'Missing parameters' });
+        const logs = await database.getChatLogs(uId, pId);
+        return res.status(200).json({ success: true, logs });
+      }
+
       const type = req.query.type || 'active'; // active, waiting
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 50;

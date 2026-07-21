@@ -14,7 +14,7 @@ const {
   countReportsByUser, countReportsAgainstUser, canCreateReport, recordReportCreated,
   logAdminAction, logBroadcast, listBroadcastTargets, getMessageRateLimit, setMessageRateLimit,
   getRuntimeState, setRuntimeState, createBroadcastJob, getBroadcastJob, updateBroadcastJobProgress,
-  finishBroadcastJob, generateReportId, getAdminStep, setAdminStep, deleteAdminStep
+  finishBroadcastJob, generateReportId, getAdminStep, setAdminStep, deleteAdminStep, logChatMessage
 } = database;
 
 function startMainBot() {
@@ -229,7 +229,22 @@ function startMainBot() {
     }
 
     const sent = await safeCopyMessage(partnerId, msg.chat.id, msg.message_id);
-    if (!sent) await safeSendMessage(fromId, 'Pesan gagal diteruskan. Coba kirim ulang.');
+    if (!sent) {
+      await safeSendMessage(fromId, 'Pesan gagal diteruskan. Coba kirim ulang.');
+    } else {
+      let type = 'Teks';
+      let text = msg.text || msg.caption || '';
+      if (msg.photo) type = 'Foto';
+      else if (msg.video) type = 'Video';
+      else if (msg.sticker) type = 'Stiker';
+      else if (msg.voice) type = 'Pesan Suara';
+      else if (msg.audio) type = 'Audio';
+      else if (msg.document) type = 'Dokumen';
+      else if (msg.animation) type = 'GIF';
+      else if (!text) type = 'Media Lainnya';
+      
+      await logChatMessage(fromId, partnerId, fromId, text, type);
+    }
   }
 
   bot.pendingPromises = [];

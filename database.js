@@ -28,6 +28,15 @@ async function initDB() {
       banned_by INTEGER,
       ban_reason TEXT
     );
+    CREATE TABLE IF NOT EXISTS active_chat_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      partner_id INTEGER NOT NULL,
+      sender_id INTEGER NOT NULL,
+      message_text TEXT,
+      message_type TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
     CREATE TABLE IF NOT EXISTS active_chats (
       user_id INTEGER PRIMARY KEY,
       partner_id INTEGER NOT NULL,
@@ -642,7 +651,16 @@ async function removeChatPair(userId) {
     const row = res.rows[0];
     await tx.execute({ sql: queries.removeActiveChatByUser, args: [uid] });
     if (row && row.partner_id != null) {
-      await tx.execute({ sql: queries.removeActiveChatByUser, args: [Number(row.partner_id)] });
+      const partnerId = Number(row.partner_id);
+      await tx.execute({ sql: queries.removeActiveChatByUser, args: [partnerId] });
+      
+      // Delete chat logs
+      const uid1 = Math.min(uid, partnerId);
+      const uid2 = Math.max(uid, partnerId);
+      await tx.execute({
+        sql: 'DELETE FROM active_chat_logs WHERE user_id = ? AND partner_id = ?',
+        args: [uid1, uid2]
+      });
       await tx.commit();
       return Number(row.partner_id);
     }
@@ -1001,6 +1019,35 @@ async function finishBroadcastJob(jobId) {
   await client.execute({ sql: queries.finishBroadcastJob, args: [Number(jobId)] });
 }
 
+
+async function logChatMessage(userId, partnerId, senderId, messageText, messageType) {
+  const uid1 = Math.min(userId, partnerId);
+  const uid2 = Math.max(userId, partnerId);
+  try {
+    await client.execute({
+      sql: 'INSERT INTO active_chat_logs (user_id, partner_id, sender_id, message_text, message_type) VALUES (?, ?, ?, ?, ?)',
+      args: [uid1, uid2, senderId, messageText, messageType]
+    });
+  } catch (err) {
+    console.error('Error logging chat message:', err);
+  }
+}
+
+async function getChatLogs(userId, partnerId) {
+  const uid1 = Math.min(userId, partnerId);
+  const uid2 = Math.max(userId, partnerId);
+  try {
+    const res = await client.execute({
+      sql: 'SELECT sender_id, message_text, message_type, created_at FROM active_chat_logs WHERE user_id = ? AND partner_id = ? ORDER BY created_at ASC',
+      args: [uid1, uid2]
+    });
+    return res.rows;
+  } catch (err) {
+    console.error('Error getting chat logs:', err);
+    return [];
+  }
+}
+
 module.exports = {
   client, upsertUser, getUser, updateUserStatus, updateLastActive, listUsers, listActiveUsers,
   listWaitingUsers, listChattingUsers, getUserStats, banUser, unbanUser, isUserBanned,
@@ -1014,7 +1061,7 @@ module.exports = {
   resetReportWindowIfNeeded, logAdminAction, logBroadcast, listBroadcastTargets,
   getAdminStep, setAdminStep, deleteAdminStep, getReportStep, setReportStep, deleteReportStep, getMessageRateLimit, setMessageRateLimit,
   getRuntimeState, setRuntimeState, createBroadcastJob, getBroadcastJob, updateBroadcastJobProgress, finishBroadcastJob,
-  listBroadcastJobs, generateReportId, deleteUser
+  listBroadcastJobs, generateReportId, deleteUser, logChatMessage, getChatLogs
 };
 async function listBroadcastJobs(page = 1, limit = 20) {
   const { safePage, safeLimit, offset } = normalizePagination(page, limit);

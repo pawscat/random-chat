@@ -683,7 +683,12 @@ async function loadSessions(type = 'active') {
           <td>${i.user_id}</td>
           <td>${i.partner_id}</td>
           <td>${time}</td>
-          <td><button class="action-btn" style="background:var(--accent-rose);color:white" onclick="sessionAction('stop_chat', ${i.user_id})">Putuskan Chat</button></td>
+          <td>
+            <div style="display: flex; gap: 8px;">
+              <button class="action-btn" style="background:var(--accent-blue);color:white; flex: 1;" onclick="viewChatLogs(${i.user_id}, ${i.partner_id})">👁️ Intip</button>
+              <button class="action-btn" style="background:var(--accent-rose);color:white; flex: 1;" onclick="sessionAction('stop_chat', ${i.user_id})">Putuskan</button>
+            </div>
+          </td>
         </tr>`;
       } else {
         const time = new Date(i.queued_at || i.queuedAt).toLocaleString('id-ID');
@@ -833,3 +838,82 @@ async function loadBroadcastHistory() {
   }
 }
 
+
+// --- CHAT SPY LOGIC ---
+let spyInterval = null;
+
+async function viewChatLogs(userId, partnerId) {
+  document.getElementById('chat-spy-modal').style.display = 'flex';
+  document.getElementById('spy-users-title').innerText = `${userId} & ${partnerId}`;
+  
+  await fetchAndRenderLogs(userId, partnerId);
+  
+  // Auto-refresh every 3 seconds
+  if (spyInterval) clearInterval(spyInterval);
+  spyInterval = setInterval(() => {
+    fetchAndRenderLogs(userId, partnerId, false);
+  }, 3000);
+}
+
+function closeChatSpyModal() {
+  document.getElementById('chat-spy-modal').style.display = 'none';
+  if (spyInterval) {
+    clearInterval(spyInterval);
+    spyInterval = null;
+  }
+}
+
+async function fetchAndRenderLogs(userId, partnerId, scrollToBottom = true) {
+  try {
+    const data = await apiGet(`sessions?action=view_logs&userId=${userId}&partnerId=${partnerId}`);
+    if (data.success) {
+      const body = document.getElementById('chat-spy-body');
+      
+      if (!data.logs || data.logs.length === 0) {
+        body.innerHTML = '<div style="text-align:center; color:var(--text-secondary); margin-top:20px;">Belum ada pesan terkirim di sesi ini.</div>';
+        return;
+      }
+      
+      const isScrolledToBottom = body.scrollHeight - body.clientHeight <= body.scrollTop + 10;
+      
+      body.innerHTML = data.logs.map(log => {
+        const isUserA = Number(log.sender_id) === Number(userId);
+        const side = isUserA ? 'left' : 'right';
+        const senderName = isUserA ? `User A (${userId})` : `User B (${partnerId})`;
+        
+        const timeStr = new Date(log.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        
+        let contentHtml = '';
+        if (log.message_type !== 'Teks') {
+          contentHtml += `<div class="chat-type">[${log.message_type}]</div>`;
+        }
+        if (log.message_text) {
+          contentHtml += `<div>${escapeHtml(log.message_text)}</div>`;
+        }
+        
+        return `
+          <div class="chat-bubble ${side}">
+            <div style="font-size: 0.75rem; opacity: 0.8; margin-bottom: 2px;">${senderName}</div>
+            ${contentHtml}
+            <div class="chat-time">${timeStr}</div>
+          </div>
+        `;
+      }).join('');
+      
+      if (scrollToBottom || isScrolledToBottom) {
+        body.scrollTop = body.scrollHeight;
+      }
+    }
+  } catch (err) {
+    console.error('Failed to fetch logs:', err);
+  }
+}
+
+function escapeHtml(unsafe) {
+    return unsafe
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+}
