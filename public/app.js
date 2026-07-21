@@ -174,7 +174,15 @@ async function loadUsers(type = 'all') {
       const lastActive = timeAgo(u.last_active || u.lastActive);
       const fullName = [u.first_name || u.firstName, u.last_name || u.lastName].filter(Boolean).join(' ') || 'Tanpa Nama';
       const username = u.username ? `<br><small style="color:var(--accent-blue)">@${u.username}</small>` : '';
-      const profileInfo = `<div>${fullName}${username}</div>`;
+      
+      let roleBadge = '';
+      if (u.role === 'super_admin') {
+        roleBadge = '<br><span class="badge" style="background:#8b5cf6;font-size:10px;padding:2px 6px;margin-top:4px;display:inline-block;border-radius:4px">👑 Super Admin</span>';
+      } else if (u.role === 'admin') {
+        roleBadge = '<br><span class="badge" style="background:#3b82f6;font-size:10px;padding:2px 6px;margin-top:4px;display:inline-block;border-radius:4px">🛡️ Admin</span>';
+      }
+      
+      const profileInfo = `<div>${fullName}${username}${roleBadge}</div>`;
 
       return `<tr style="animation-delay: ${index * 0.05}s">
         <td><strong>${u.user_id || u.userId || '—'}</strong></td>

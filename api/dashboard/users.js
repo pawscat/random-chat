@@ -44,7 +44,21 @@ module.exports = async (req, res) => {
         default:
           result = await database.listUsers(page, limit);
       }
-      return res.status(200).json({ success: true, users: result.items, pagination: { page: result.page, totalPages: result.totalPages, total: result.total }, type });
+      
+      const adminIds = Array.isArray(config.ADMIN_IDS) ? config.ADMIN_IDS : [];
+      const superAdminIds = Array.isArray(config.SUPER_ADMIN_IDS) ? config.SUPER_ADMIN_IDS : [];
+      
+      const enrichedItems = result.items.map(u => {
+        let role = 'user';
+        if (superAdminIds.includes(Number(u.user_id))) {
+          role = 'super_admin';
+        } else if (adminIds.includes(Number(u.user_id))) {
+          role = 'admin';
+        }
+        return { ...u, role };
+      });
+
+      return res.status(200).json({ success: true, users: enrichedItems, pagination: { page: result.page, totalPages: result.totalPages, total: result.total }, type });
     }
 
     // POST: action on user (ban/unban)
