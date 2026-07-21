@@ -38,13 +38,6 @@ async function initDB() {
       file_id TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
-    
-    // Auto-migrate to add file_id if it doesn't exist
-    try {
-      await client.execute('ALTER TABLE active_chat_logs ADD COLUMN file_id TEXT');
-    } catch(err) {
-      // Ignored if column already exists
-    }
     CREATE TABLE IF NOT EXISTS active_chats (
       user_id INTEGER PRIMARY KEY,
       partner_id INTEGER NOT NULL,
@@ -145,12 +138,13 @@ async function initDB() {
     CREATE INDEX IF NOT EXISTS idx_admin_actions_created_at ON admin_actions(created_at);
   `);
 
-  // Migration: tambah kolom profil user
+  // Migration: tambah kolom
   const migrations = [
     "ALTER TABLE users ADD COLUMN username TEXT",
     "ALTER TABLE users ADD COLUMN first_name TEXT",
     "ALTER TABLE users ADD COLUMN last_name TEXT",
-    "ALTER TABLE users ADD COLUMN language_code TEXT"
+    "ALTER TABLE users ADD COLUMN language_code TEXT",
+    "ALTER TABLE active_chat_logs ADD COLUMN file_id TEXT"
   ];
   for (const sql of migrations) {
     try { await client.execute(sql); } catch (e) {
