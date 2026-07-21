@@ -1,5 +1,17 @@
 const config = require('../../config');
 const database = require('../../database');
+const TelegramBot = require('node-telegram-bot-api');
+
+async function sendTelegramMessage(chatId, text) {
+  if (!config.MAIN_BOT_TOKEN || config.MAIN_BOT_TOKEN.includes('ISI_TOKEN')) return;
+  try {
+    const bot = new TelegramBot(config.MAIN_BOT_TOKEN);
+    await bot.sendMessage(chatId, text, { parse_mode: 'HTML' });
+  } catch (err) {
+    console.error('Failed to send telegram message from dashboard:', err.message);
+  }
+}
+
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -44,6 +56,12 @@ module.exports = async (req, res) => {
         const partner = await database.getPartner(numericUserId);
         if (partner) {
           await database.removeChatPair(numericUserId, partner);
+          await database.updateUserStatus('idle', numericUserId);
+          await database.updateUserStatus('idle', partner);
+          
+          await sendTelegramMessage(numericUserId, '⚠️ Obrolan Anda telah dihentikan secara paksa oleh Admin.\nKetik /search untuk mencari teman baru.');
+          await sendTelegramMessage(partner, '⚠️ Obrolan Anda telah dihentikan secara paksa oleh Admin.\nKetik /search untuk mencari teman baru.');
+          
           return res.status(200).json({ success: true, message: `Chat antara ${numericUserId} dan ${partner} dihentikan.` });
         }
         return res.status(400).json({ error: 'User sedang tidak dalam chat aktif' });
@@ -52,6 +70,9 @@ module.exports = async (req, res) => {
       if (action === 'kick_queue') {
         await database.removeFromWaitingQueue(numericUserId);
         await database.updateUserStatus('idle', numericUserId);
+        
+        await sendTelegramMessage(numericUserId, '⚠️ Anda telah dikeluarkan dari antrean oleh Admin.');
+        
         return res.status(200).json({ success: true, message: `User ${numericUserId} dikeluarkan dari antrean.` });
       }
 
