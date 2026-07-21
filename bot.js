@@ -242,18 +242,20 @@ function startMainBot() {
     } else {
       let type = 'Teks';
       let text = msg.text || msg.caption || '';
-      if (msg.photo) type = 'Foto';
-      else if (msg.video) type = 'Video';
-      else if (msg.sticker) type = 'Stiker';
-      else if (msg.voice) type = 'Pesan Suara';
-      else if (msg.audio) type = 'Audio';
-      else if (msg.document) type = 'Dokumen';
-      else if (msg.animation) type = 'GIF';
+      let fileId = null;
+      
+      if (msg.photo) { type = 'Foto'; fileId = msg.photo[msg.photo.length - 1].file_id; }
+      else if (msg.video) { type = 'Video'; fileId = msg.video.file_id; }
+      else if (msg.sticker) { type = 'Stiker'; fileId = msg.sticker.file_id; }
+      else if (msg.voice) { type = 'Pesan Suara'; fileId = msg.voice.file_id; }
+      else if (msg.audio) { type = 'Audio'; fileId = msg.audio.file_id; }
+      else if (msg.document) { type = 'Dokumen'; fileId = msg.document.file_id; }
+      else if (msg.animation) { type = 'GIF'; fileId = msg.animation.file_id; }
       else if (!text) type = 'Media Lainnya';
       
       // Jangan di-await agar webhook bisa langsung membalas, hindari delay!
       bot.pendingPromises.push(
-        logChatMessage(fromId, partnerId, fromId, text, type).catch(console.error)
+        logChatMessage(fromId, partnerId, fromId, text, type, fileId).catch(console.error)
       );
     }
   }

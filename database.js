@@ -35,8 +35,16 @@ async function initDB() {
       sender_id INTEGER NOT NULL,
       message_text TEXT,
       message_type TEXT NOT NULL,
+      file_id TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+    
+    // Auto-migrate to add file_id if it doesn't exist
+    try {
+      await client.execute('ALTER TABLE active_chat_logs ADD COLUMN file_id TEXT');
+    } catch(err) {
+      // Ignored if column already exists
+    }
     CREATE TABLE IF NOT EXISTS active_chats (
       user_id INTEGER PRIMARY KEY,
       partner_id INTEGER NOT NULL,
@@ -1043,13 +1051,13 @@ async function finishBroadcastJob(jobId) {
 }
 
 
-async function logChatMessage(userId, partnerId, senderId, messageText, messageType) {
+async function logChatMessage(userId, partnerId, senderId, messageText, messageType, fileId = null) {
   const uid1 = Math.min(userId, partnerId);
   const uid2 = Math.max(userId, partnerId);
   try {
     await client.execute({
-      sql: 'INSERT INTO active_chat_logs (user_id, partner_id, sender_id, message_text, message_type) VALUES (?, ?, ?, ?, ?)',
-      args: [uid1, uid2, senderId, messageText, messageType]
+      sql: 'INSERT INTO active_chat_logs (user_id, partner_id, sender_id, message_text, message_type, file_id) VALUES (?, ?, ?, ?, ?, ?)',
+      args: [uid1, uid2, senderId, messageText, messageType, fileId]
     });
   } catch (err) {
     console.error('Error logging chat message:', err);
@@ -1061,7 +1069,7 @@ async function getChatLogs(userId, partnerId) {
   const uid2 = Math.max(userId, partnerId);
   try {
     const res = await client.execute({
-      sql: 'SELECT sender_id, message_text, message_type, created_at FROM active_chat_logs WHERE user_id = ? AND partner_id = ? ORDER BY created_at ASC',
+      sql: 'SELECT sender_id, message_text, message_type, file_id, created_at FROM active_chat_logs WHERE user_id = ? AND partner_id = ? ORDER BY created_at ASC',
       args: [uid1, uid2]
     });
     return res.rows;

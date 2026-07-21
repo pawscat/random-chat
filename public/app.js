@@ -887,8 +887,22 @@ async function fetchAndRenderLogs(userId, partnerId, scrollToBottom = true) {
         if (log.message_type !== 'Teks') {
           contentHtml += `<div class="chat-type">[${log.message_type}]</div>`;
         }
+        
+        if (log.file_id) {
+          const mediaUrl = `/api/dashboard/file?file_id=${log.file_id}&token=${authToken}`;
+          if (log.message_type === 'Foto') {
+            contentHtml += `<img src="${mediaUrl}" style="max-width: 100%; border-radius: 8px; margin-top: 5px;"/>`;
+          } else if (log.message_type === 'Video' || log.message_type === 'GIF') {
+            contentHtml += `<video src="${mediaUrl}" controls style="max-width: 100%; border-radius: 8px; margin-top: 5px;"></video>`;
+          } else if (log.message_type === 'Pesan Suara' || log.message_type === 'Audio') {
+            contentHtml += `<audio src="${mediaUrl}" controls style="max-width: 100%; margin-top: 5px;"></audio>`;
+          } else {
+            contentHtml += `<a href="${mediaUrl}" target="_blank" style="color: var(--accent-blue); text-decoration: underline; margin-top: 5px; display: inline-block;">Unduh Berkas</a>`;
+          }
+        }
+        
         if (log.message_text) {
-          contentHtml += `<div>${escapeHtml(log.message_text)}</div>`;
+          contentHtml += `<div style="margin-top: 5px;">${escapeHtml(log.message_text)}</div>`;
         }
         
         return `
