@@ -472,6 +472,11 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const page = link.dataset.page;
       switchPage(page);
+      
+      // Auto close sidebar on mobile
+      if (window.innerWidth <= 768) {
+        closeMobileSidebar();
+      }
     });
   });
 

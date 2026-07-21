@@ -1031,6 +1031,18 @@ body {
 
 /* ===================== RESPONSIVE ===================== */
 
+@media (max-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .server-grid, .settings-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .main-content {
+    padding: 30px 20px;
+  }
+}
+
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);
@@ -1046,7 +1058,7 @@ body {
 
   .main-content {
     margin-left: 0;
-    padding: 72px 16px 24px;
+    padding: 90px 16px 24px;
   }
 
   .stats-grid {
@@ -1056,13 +1068,19 @@ body {
   .stat-card {
     flex-direction: column;
     text-align: center;
-    padding: 18px;
-    gap: 10px;
+    padding: 16px;
+    gap: 8px;
   }
 
   .users-toolbar {
     flex-direction: column;
     align-items: stretch;
+    gap: 12px;
+  }
+
+  .filter-group {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .search-box input {
@@ -1077,6 +1095,15 @@ body {
   .server-grid, .settings-grid {
     grid-template-columns: 1fr;
   }
+  
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .users-table {
+    min-width: 600px; /* Force scroll if too narrow */
+  }
 }
 
 @media (max-width: 480px) {
@@ -1084,8 +1111,18 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .filter-group {
-    flex-wrap: wrap;
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .header-actions {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+  }
+
+  .settings-input {
+    width: 100%;
   }
 }
 
