@@ -25,6 +25,15 @@ function startMainBot() {
   // Hapus polling: true untuk mode Vercel Serverless
   const bot = new TelegramBot(config.MAIN_BOT_TOKEN);
   
+  // Set Auto-Complete Menu Commands
+  bot.setMyCommands([
+    { command: '/search', description: 'Cari teman ngobrol baru' },
+    { command: '/next', description: 'Lewati obrolan ini & cari yang lain' },
+    { command: '/stop', description: 'Hentikan obrolan saat ini' },
+    { command: '/report', description: 'Laporkan pelanggaran' },
+    { command: '/info', description: 'Lihat ID dan status Anda' }
+  ]).catch(err => console.error('Gagal set command:', err.message));
+  
   function isAdmin(userId) {
     const ids = Array.isArray(config.ADMIN_IDS) ? config.ADMIN_IDS : [];
     const supers = Array.isArray(config.SUPER_ADMIN_IDS) ? config.SUPER_ADMIN_IDS : [];

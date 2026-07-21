@@ -20,6 +20,11 @@ function startReportBot() {
 
   // Hapus polling: true untuk Vercel Serverless
   const bot = new TelegramBot(config.REPORT_BOT_TOKEN);
+  
+  bot.setMyCommands([
+    { command: '/start', description: 'Mulai bot laporan' },
+    { command: '/status', description: 'Cek status laporan Anda' }
+  ]).catch(err => console.error('Gagal set command report bot:', err.message));
   function isAdmin(userId) {
     const ids = Array.isArray(config.ADMIN_IDS) ? config.ADMIN_IDS : [];
     const supers = Array.isArray(config.SUPER_ADMIN_IDS) ? config.SUPER_ADMIN_IDS : [];
@@ -219,6 +224,29 @@ function startReportBot() {
       await bot.answerCallbackQuery(query.id);
       await notifyAdminsNewReport();
     }
+  }));
+
+  bot.onText(/^\/admin(?:@\w+)?$/i, runSafely(async (msg) => {
+    if (!msg.from) return;
+    const userId = Number(msg.from.id);
+    if (!isAdmin(userId)) {
+      await safeSendMessage(msg.chat.id, 'Perintah ini hanya untuk admin.');
+      return;
+    }
+    
+    const opts = {
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: '📝 Laporan Menunggu', callback_data: 'admin_cmd_/waitingreports' }],
+          [{ text: '🔍 Klaim Laporan', callback_data: 'admin_prompt_/claim' }, { text: '✅ Resolve', callback_data: 'admin_prompt_/resolve' }],
+          [{ text: '❌ Tolak Laporan', callback_data: 'admin_prompt_/reject' }, { text: '🔨 Ban Pelaku', callback_data: 'admin_prompt_/banreported' }],
+          [{ text: '📊 Status Laporan', callback_data: 'admin_cmd_/statusreports' }]
+        ]
+      }
+    };
+    
+    await safeSendMessage(msg.chat.id, '<b>⚖️ Panel Kontrol Laporan Admin</b>\nSilakan pilih aksi di bawah ini:', opts);
   }));
 
   bot.onText(/^\/start(?:@\w+)?(?:\s+(.+))?$/i, runSafely(async (msg, match) => {
