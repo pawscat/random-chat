@@ -274,7 +274,7 @@ function startMainBot() {
           console.error('[runSafely Error]', error);
           const msg = args[0];
           if (msg?.chat?.id) {
-            await safeSendMessage(msg.chat.id, `Terjadi kesalahan sistem: ${error.message}\n\nStack:\n${error.stack.slice(0, 500)}`);
+            await safeSendMessage(msg.chat.id, 'Terjadi kesalahan sistem. Coba lagi beberapa saat.');
           }
         }
       })();
@@ -478,7 +478,8 @@ function startMainBot() {
       await enforceBanState(userId, { notifySelf: true, selfChatId: msg.chat.id });
       return;
     }
-    const partnerId = await getPartner(userId);
+    const partnerObj = await getPartner(userId);
+    const partnerId = partnerObj ? partnerObj.partnerId : null;
     if (!partnerId) {
       await safeSendMessage(msg.chat.id, config.MESSAGES.reportOnlyInChat);
       return;

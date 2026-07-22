@@ -73,11 +73,12 @@ module.exports = async (req, res) => {
       const numericUserId = Number(userId);
 
       if (action === 'stop_chat') {
-        const partner = await database.getPartner(numericUserId);
+        const partnerObj = await database.getPartner(numericUserId);
+        const partner = partnerObj ? partnerObj.partnerId : null;
         if (partner) {
-          await database.removeChatPair(numericUserId, partner);
-          await database.updateUserStatus('idle', numericUserId);
-          await database.updateUserStatus('idle', partner);
+          await database.removeChatPair(numericUserId);
+          await database.updateUserStatus(numericUserId, 'idle');
+          await database.updateUserStatus(partner, 'idle');
           
           await sendTelegramMessage(numericUserId, '⚠️ Obrolan Anda telah dihentikan secara paksa oleh Admin.\nKetik /search untuk mencari teman baru.');
           await sendTelegramMessage(partner, '⚠️ Obrolan Anda telah dihentikan secara paksa oleh Admin.\nKetik /search untuk mencari teman baru.');
@@ -89,7 +90,7 @@ module.exports = async (req, res) => {
 
       if (action === 'kick_queue') {
         await database.removeFromWaitingQueue(numericUserId);
-        await database.updateUserStatus('idle', numericUserId);
+        await database.updateUserStatus(numericUserId, 'idle');
         
         await sendTelegramMessage(numericUserId, '⚠️ Anda telah dikeluarkan dari antrean oleh Admin.');
         

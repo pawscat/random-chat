@@ -10,7 +10,8 @@ const {
   listReportsByStatuses, getNextSubmittedReport, claimReport, releaseReport, resolveReport,
   rejectReport, markReportBanned, countReportsByStatus, banUser, updateUserStatus,
   clearWaitingUser, getPartner, removeChatPair, isUserBanned, logAdminAction,
-  getReportStep, setReportStep, deleteReportStep, getRuntimeState, setRuntimeState
+  getReportStep, setReportStep, deleteReportStep, getRuntimeState, setRuntimeState,
+  getAdminStep, setAdminStep, deleteAdminStep
 } = database;
 
 function startReportBot() {
@@ -124,7 +125,8 @@ function startReportBot() {
     await updateUserStatus(uid, 'banned');
     await clearWaitingUser(uid);
 
-    const partnerId = await getPartner(uid);
+    const partnerObj = await getPartner(uid);
+    const partnerId = partnerObj ? partnerObj.partnerId : null;
     if (partnerId) {
       await removeChatPair(uid);
       await safeSendMessage(partnerId, 'Partner dihentikan karena pelanggaran aturan.');

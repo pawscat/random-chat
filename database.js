@@ -1,5 +1,5 @@
-const crypto = require('crypto');
 'use strict';
+const crypto = require('crypto');
 
 require('dotenv').config();
 const { createClient } = require('@libsql/client');
@@ -355,9 +355,9 @@ const queries = {
   deleteUser: 'DELETE FROM users WHERE user_id = ?',
   deleteUserChat: 'DELETE FROM active_chats WHERE user_id = ? OR partner_id = ?',
   deleteUserWaiting: 'DELETE FROM waiting_queue WHERE user_id = ?',
-  deleteUserMsgLimit: 'DELETE FROM message_rate_limits WHERE user_id = ?',
+  deleteUserMsgLimit: 'DELETE FROM rate_limits_mem WHERE user_id = ?',
   deleteUserRepLimit: 'DELETE FROM report_rate_limits WHERE user_id = ?',
-  deleteUserRepStep: 'DELETE FROM report_draft_steps WHERE user_id = ?',
+  deleteUserRepStep: 'DELETE FROM report_steps WHERE user_id = ?',
   groupedReportStatus: 'SELECT status, COUNT(*) AS total FROM reports GROUP BY status',
   countOpenReportsByUser: `
     SELECT COUNT(*) AS total FROM reports WHERE reporter_id = ? AND status IN ('pending_evidence', 'submitted', 'under_review')
@@ -539,7 +539,7 @@ async function banUser(userId, adminId, reason) {
   await client.execute({ sql: queries.banUser, args: [now, adminId != null ? Number(adminId) : null, safeReason, now, uid] });
   
   // Otomatis keluarkan dari antrean atau chat aktif jika ada
-  await client.execute({ sql: queries.removeWaitingUser, args: [uid] });
+  await client.execute({ sql: queries.removeFromWaitingQueue, args: [uid] });
   
   const tx = await client.transaction('write');
   try {
@@ -549,13 +549,13 @@ async function banUser(userId, adminId, reason) {
     if (row && row.partner_id != null) {
       const partnerId = Number(row.partner_id);
       await tx.execute({ sql: queries.removeActiveChatByUser, args: [partnerId] });
-      await tx.execute({ sql: queries.updateUserStatus, args: ['idle', now, partnerId] });
+      await tx.execute({ sql: queries.updateUserStatus, args: ['idle', partnerId] });
       await tx.execute({
         sql: 'DELETE FROM active_chat_logs WHERE user_id = ? AND partner_id = ?',
         args: [Math.min(uid, partnerId), Math.max(uid, partnerId)]
       });
     }
-    await tx.execute({ sql: queries.updateUserStatus, args: ['idle', now, uid] });
+    await tx.execute({ sql: queries.updateUserStatus, args: ['idle', uid] });
     await tx.commit();
   } catch(e) {
     await tx.rollback();
@@ -672,7 +672,7 @@ async function clearWaitingUser(userId) {
 async function getPartner(userId) {
   const res = await client.execute({ sql: queries.getPartner, args: [Number(userId)] });
   const row = res.rows[0];
-  return row ? Number(row.partner_id) : null;
+  return row ? { partnerId: Number(row.partner_id), sessionId: row.session_id || null } : null;
 }
 
 async function removeChatPair(userId) {
@@ -1052,13 +1052,13 @@ async function finishBroadcastJob(jobId) {
 }
 
 
-async function logChatMessage(userId, partnerId, senderId, messageText, messageType, fileId = null) {
+async function logChatMessage(userId, partnerId, senderId, messageText, messageType, fileId = null, sessionId = null) {
   const uid1 = Math.min(userId, partnerId);
   const uid2 = Math.max(userId, partnerId);
   try {
     await client.execute({
-      sql: 'INSERT INTO active_chat_logs (user_id, partner_id, sender_id, message_text, message_type, file_id) VALUES (?, ?, ?, ?, ?, ?)',
-      args: [uid1, uid2, senderId, messageText, messageType, fileId]
+      sql: 'INSERT INTO active_chat_logs (user_id, partner_id, sender_id, message_text, message_type, file_id, session_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      args: [uid1, uid2, senderId, messageText, messageType, fileId, sessionId]
     });
   } catch (err) {
     console.error('Error logging chat message:', err);
@@ -1080,6 +1080,37 @@ async function getChatLogs(userId, partnerId) {
   }
 }
 
+async function getChatLogsBySession(sessionId) {
+  try {
+    const res = await client.execute({
+      sql: 'SELECT sender_id, message_text, message_type, file_id, created_at FROM active_chat_logs WHERE session_id = ? ORDER BY created_at ASC',
+      args: [String(sessionId)]
+    });
+    return res.rows;
+  } catch (err) {
+    console.error('Error getting chat logs by session:', err);
+    return [];
+  }
+}
+
+async function getChatHistorySessions() {
+  try {
+    const res = await client.execute({
+      sql: `SELECT session_id, MIN(user_id) AS user_id, MAX(partner_id) AS partner_id, MIN(created_at) AS started_at, MAX(created_at) AS last_message_at, COUNT(*) AS message_count
+            FROM active_chat_logs
+            WHERE session_id IS NOT NULL
+            GROUP BY session_id
+            ORDER BY last_message_at DESC
+            LIMIT 100`,
+      args: []
+    });
+    return res.rows;
+  } catch (err) {
+    console.error('Error getting chat history sessions:', err);
+    return [];
+  }
+}
+
 module.exports = {
   client, upsertUser, getUser, updateUserStatus, updateLastActive, listUsers, listActiveUsers,
   listWaitingUsers, listChattingUsers, getUserStats, banUser, unbanUser, isUserBanned,
@@ -1093,7 +1124,7 @@ module.exports = {
   resetReportWindowIfNeeded, logAdminAction, logBroadcast, listBroadcastTargets,
   getAdminStep, setAdminStep, deleteAdminStep, getReportStep, setReportStep, deleteReportStep, getMessageRateLimit, setMessageRateLimit,
   getRuntimeState, setRuntimeState, createBroadcastJob, getBroadcastJob, updateBroadcastJobProgress, finishBroadcastJob,
-  listBroadcastJobs, generateReportId, deleteUser, logChatMessage, getChatLogs
+  listBroadcastJobs, generateReportId, deleteUser, logChatMessage, getChatLogs, getChatLogsBySession, getChatHistorySessions
 };
 async function listBroadcastJobs(page = 1, limit = 20) {
   const { safePage, safeLimit, offset } = normalizePagination(page, limit);
