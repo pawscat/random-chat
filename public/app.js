@@ -891,13 +891,13 @@ async function fetchAndRenderLogs(userId, partnerId, scrollToBottom = true) {
         if (log.file_id) {
           const mediaUrl = `/api/dashboard/file?file_id=${log.file_id}&token=${authToken}`;
           if (log.message_type === 'Foto') {
-            contentHtml += `<img src="${mediaUrl}" style="max-width: 100%; border-radius: 8px; margin-top: 5px;"/>`;
+            contentHtml += `<img src="${mediaUrl}" loading="lazy" />`;
           } else if (log.message_type === 'Video' || log.message_type === 'GIF') {
-            contentHtml += `<video src="${mediaUrl}" controls style="max-width: 100%; border-radius: 8px; margin-top: 5px;"></video>`;
+            contentHtml += `<video src="${mediaUrl}" controls preload="metadata"></video>`;
           } else if (log.message_type === 'Pesan Suara' || log.message_type === 'Audio') {
-            contentHtml += `<audio src="${mediaUrl}" controls style="max-width: 100%; margin-top: 5px;"></audio>`;
+            contentHtml += `<audio src="${mediaUrl}" controls preload="metadata"></audio>`;
           } else {
-            contentHtml += `<a href="${mediaUrl}" target="_blank" style="color: var(--accent-blue); text-decoration: underline; margin-top: 5px; display: inline-block;">Unduh Berkas</a>`;
+            contentHtml += `<a href="${mediaUrl}" target="_blank" class="media-link">⬇️ Unduh Berkas</a>`;
           }
         }
         
@@ -1006,13 +1006,13 @@ async function viewChatHistory(sessionId, userId, partnerId) {
         if (log.file_id) {
           const mediaUrl = `/api/dashboard/file?file_id=${log.file_id}&token=${authToken}`;
           if (log.message_type === 'Foto') {
-            contentHtml += `<img src="${mediaUrl}" style="max-width: 100%; border-radius: 8px; margin-top: 5px;"/>`;
+            contentHtml += `<img src="${mediaUrl}" loading="lazy" />`;
           } else if (log.message_type === 'Video' || log.message_type === 'GIF') {
-            contentHtml += `<video src="${mediaUrl}" controls style="max-width: 100%; border-radius: 8px; margin-top: 5px;"></video>`;
+            contentHtml += `<video src="${mediaUrl}" controls preload="metadata"></video>`;
           } else if (log.message_type === 'Pesan Suara' || log.message_type === 'Audio') {
-            contentHtml += `<audio src="${mediaUrl}" controls style="max-width: 100%; margin-top: 5px;"></audio>`;
+            contentHtml += `<audio src="${mediaUrl}" controls preload="metadata"></audio>`;
           } else {
-            contentHtml += `<a href="${mediaUrl}" target="_blank" style="color: var(--accent-blue); text-decoration: underline; margin-top: 5px; display: inline-block;">Unduh Berkas</a>`;
+            contentHtml += `<a href="${mediaUrl}" target="_blank" class="media-link">⬇️ Unduh Berkas</a>`;
           }
         }
         

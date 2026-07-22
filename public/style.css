@@ -1223,5 +1223,40 @@ body {
   font-size: 0.7rem;
   opacity: 0.6;
   text-align: right;
-  margin-top: 4px;
+  margin-top: 6px;
+}
+
+/* Chat Media Elements */
+.chat-bubble img,
+.chat-bubble video {
+  max-width: 100%;
+  max-height: 250px;
+  border-radius: 8px;
+  margin-top: 8px;
+  object-fit: contain;
+  background: rgba(0,0,0,0.2);
+  display: block;
+}
+
+.chat-bubble audio {
+  max-width: 100%;
+  margin-top: 8px;
+  height: 40px;
+  display: block;
+  outline: none;
+}
+
+.chat-bubble .media-link {
+  color: var(--text-primary);
+  text-decoration: underline;
+  margin-top: 8px;
+  display: inline-block;
+  font-weight: 500;
+  padding: 6px 12px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+.chat-bubble .media-link:hover {
+  background: rgba(255,255,255,0.25);
 }
