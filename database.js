@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 'use strict';
 
 require('dotenv').config();
@@ -36,12 +37,14 @@ async function initDB() {
       message_text TEXT,
       message_type TEXT NOT NULL,
       file_id TEXT,
+      session_id TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
     CREATE TABLE IF NOT EXISTS active_chats (
       user_id INTEGER PRIMARY KEY,
       partner_id INTEGER NOT NULL,
-      started_at INTEGER NOT NULL
+      started_at INTEGER NOT NULL,
+      session_id TEXT
     );
     CREATE TABLE IF NOT EXISTS waiting_queue (
       user_id INTEGER PRIMARY KEY,
@@ -144,7 +147,9 @@ async function initDB() {
     "ALTER TABLE users ADD COLUMN first_name TEXT",
     "ALTER TABLE users ADD COLUMN last_name TEXT",
     "ALTER TABLE users ADD COLUMN language_code TEXT",
-    "ALTER TABLE active_chat_logs ADD COLUMN file_id TEXT"
+    "ALTER TABLE active_chat_logs ADD COLUMN file_id TEXT",
+    "ALTER TABLE active_chat_logs ADD COLUMN session_id TEXT",
+    "ALTER TABLE active_chats ADD COLUMN session_id TEXT"
   ];
   for (const sql of migrations) {
     try { await client.execute(sql); } catch (e) {
@@ -274,13 +279,14 @@ const queries = {
   `,
 
   upsertChatPair: `
-    INSERT INTO active_chats (user_id, partner_id, started_at)
-    VALUES (?, ?, ?)
+    INSERT INTO active_chats (user_id, partner_id, started_at, session_id)
+    VALUES (?, ?, ?, ?)
     ON CONFLICT(user_id) DO UPDATE SET
       partner_id = excluded.partner_id,
-      started_at = excluded.started_at
+      started_at = excluded.started_at,
+      session_id = excluded.session_id
   `,
-  getPartner: 'SELECT partner_id FROM active_chats WHERE user_id = ?',
+  getPartner: 'SELECT partner_id, session_id FROM active_chats WHERE user_id = ?',
   removeActiveChatByUser: 'DELETE FROM active_chats WHERE user_id = ?',
   countChatPairs: 'SELECT CAST(COUNT(*) / 2 AS INTEGER) AS total FROM active_chats',
   countChatPairsRows: 'SELECT COUNT(*) AS total FROM active_chats WHERE user_id < partner_id',

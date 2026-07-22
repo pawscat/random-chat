@@ -63,6 +63,9 @@
         <li><a href="#" class="nav-link" data-page="sessions" id="nav-sessions">
           <span class="nav-icon">💬</span> Sesi & Antrean
         </a></li>
+        <li><a href="#" class="nav-link" data-page="history" id="nav-history">
+          <span class="nav-icon">🗄️</span> Riwayat Obrolan
+        </a></li>
         <li><a href="#" class="nav-link" data-page="broadcast" id="nav-broadcast">
           <span class="nav-icon">📢</span> Siaran
         </a></li>
@@ -282,6 +285,36 @@
               <tr><td colspan="5" class="table-empty">Memuat data...</td></tr>
             </tbody>
           </table>
+        </div>
+      </section>
+      
+      <!-- History Page -->
+      <section id="page-history" class="page">
+        <div class="page-header">
+          <h1>Riwayat Obrolan</h1>
+          <button class="btn btn-primary" onclick="loadHistory(1)">🔄 Refresh</button>
+        </div>
+        <div class="glass-panel">
+          <h2 class="panel-title">Sesi Masa Lalu</h2>
+          <div class="table-container">
+            <table class="data-table" id="history-table">
+              <thead>
+                <tr>
+                  <th>Session ID</th>
+                  <th>User A</th>
+                  <th>User B</th>
+                  <th>Mulai</th>
+                  <th>Selesai</th>
+                  <th>Pesan</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Data will be loaded here -->
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination" id="history-pagination"></div>
         </div>
       </section>
 

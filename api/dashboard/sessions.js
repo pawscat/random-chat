@@ -41,6 +41,18 @@ module.exports = async (req, res) => {
         const logs = await database.getChatLogs(uId, pId);
         return res.status(200).json({ success: true, logs });
       }
+      
+      if (req.query.action === 'view_history') {
+        const sessionId = req.query.sessionId;
+        if (!sessionId) return res.status(400).json({ error: 'Missing session ID' });
+        const logs = await database.getChatLogsBySession(sessionId);
+        return res.status(200).json({ success: true, logs });
+      }
+      
+      if (req.query.action === 'list_history') {
+        const sessions = await database.getChatHistorySessions();
+        return res.status(200).json({ success: true, sessions });
+      }
 
       const type = req.query.type || 'active'; // active, waiting
       const page = parseInt(req.query.page) || 1;

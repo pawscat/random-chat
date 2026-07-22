@@ -257,7 +257,7 @@ function startMainBot() {
       
       // Jangan di-await agar webhook bisa langsung membalas, hindari delay!
       bot.pendingPromises.push(
-        logChatMessage(fromId, partnerId, fromId, text, type, fileId).catch(console.error)
+        logChatMessage(fromId, partnerId, fromId, text, type, fileId, sessionId).catch(console.error)
       );
     }
   }

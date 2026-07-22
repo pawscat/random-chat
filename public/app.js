@@ -931,3 +931,107 @@ function escapeHtml(unsafe) {
          .replace(/"/g, "&quot;")
          .replace(/'/g, "&#039;");
 }
+
+
+// ===================== HISTORY =====================
+let historyCurrentPage = 1;
+async function loadHistory(page = 1) {
+  historyCurrentPage = page;
+  try {
+    const data = await apiGet(`sessions?action=list_history`);
+    if (data.success) {
+      const tbody = $('#history-table tbody');
+      if (data.sessions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">Tidak ada riwayat obrolan masa lalu.</td></tr>';
+        return;
+      }
+      
+      let html = '';
+      data.sessions.forEach(s => {
+        const start = new Date(s.started_at).toLocaleString('id-ID');
+        const end = new Date(s.ended_at).toLocaleString('id-ID');
+        html += `
+          <tr>
+            <td style="font-size: 0.8em; color: var(--text-secondary);">${s.session_id.substring(0,8)}...</td>
+            <td>${s.user_id}</td>
+            <td>${s.partner_id}</td>
+            <td>${start}</td>
+            <td>${end}</td>
+            <td>${s.msg_count}</td>
+            <td>
+              <button class="btn btn-primary" onclick="viewChatHistory('${s.session_id}', '${s.user_id}', '${s.partner_id}')">👁️ Lihat Chat</button>
+            </td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+  } catch(e) {
+    console.error('Failed to load history', e);
+  }
+}
+
+async function viewChatHistory(sessionId, userId, partnerId) {
+  document.getElementById('chat-spy-modal').style.display = 'flex';
+  document.getElementById('spy-users-title').innerText = `[History] ${userId} & ${partnerId}`;
+  
+  // Clean up any active interval from spy mode
+  if (spyInterval) {
+    clearInterval(spyInterval);
+    spyInterval = null;
+  }
+  
+  try {
+    const data = await apiGet(`sessions?action=view_history&sessionId=${sessionId}`);
+    if (data.success) {
+      const body = document.getElementById('chat-spy-body');
+      
+      if (!data.logs || data.logs.length === 0) {
+        body.innerHTML = '<div style="text-align:center; color:var(--text-secondary); margin-top:20px;">Riwayat tidak ditemukan.</div>';
+        return;
+      }
+      
+      body.innerHTML = data.logs.map(log => {
+        const isUserA = Number(log.sender_id) === Number(userId);
+        const side = isUserA ? 'left' : 'right';
+        const senderName = isUserA ? `User A (${userId})` : `User B (${partnerId})`;
+        
+        const timeStr = new Date(log.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        
+        let contentHtml = '';
+        if (log.message_type !== 'Teks') {
+          contentHtml += `<div class="chat-type">[${log.message_type}]</div>`;
+        }
+        
+        if (log.file_id) {
+          const mediaUrl = `/api/dashboard/file?file_id=${log.file_id}&token=${authToken}`;
+          if (log.message_type === 'Foto') {
+            contentHtml += `<img src="${mediaUrl}" style="max-width: 100%; border-radius: 8px; margin-top: 5px;"/>`;
+          } else if (log.message_type === 'Video' || log.message_type === 'GIF') {
+            contentHtml += `<video src="${mediaUrl}" controls style="max-width: 100%; border-radius: 8px; margin-top: 5px;"></video>`;
+          } else if (log.message_type === 'Pesan Suara' || log.message_type === 'Audio') {
+            contentHtml += `<audio src="${mediaUrl}" controls style="max-width: 100%; margin-top: 5px;"></audio>`;
+          } else {
+            contentHtml += `<a href="${mediaUrl}" target="_blank" style="color: var(--accent-blue); text-decoration: underline; margin-top: 5px; display: inline-block;">Unduh Berkas</a>`;
+          }
+        }
+        
+        if (log.message_text) {
+          contentHtml += `<div style="margin-top: 5px;">${escapeHtml(log.message_text)}</div>`;
+        }
+        
+        return `
+          <div class="chat-bubble ${side}">
+            <div style="font-size: 0.75rem; opacity: 0.8; margin-bottom: 2px;">${senderName}</div>
+            ${contentHtml}
+            <div class="chat-time">${timeStr}</div>
+          </div>
+        `;
+      }).join('');
+      
+      body.scrollTop = body.scrollHeight;
+    }
+  } catch (err) {
+    console.error('Failed to fetch history logs:', err);
+  }
+}
