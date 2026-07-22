@@ -221,10 +221,12 @@ function startMainBot() {
     }
 
     // Ambil partner dan cek rate limit secara paralel (mempercepat respons)
-    const [partnerId, rateLimitOk] = await Promise.all([
+    const [partnerObj, rateLimitOk] = await Promise.all([
       getPartner(fromId),
       checkRateLimit(fromId)
     ]);
+    const partnerId = partnerObj ? partnerObj.partnerId : null;
+    const sessionId = partnerObj ? partnerObj.sessionId : null;
     
     if (!partnerId) return;
 
