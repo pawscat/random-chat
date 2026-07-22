@@ -417,6 +417,10 @@ function switchPage(pageName) {
     loadSessions(activeFilter ? activeFilter.dataset.sessionFilter : 'active');
   }
 
+  if (pageName === 'history') {
+    loadHistory();
+  }
+
   if (pageName === 'broadcast') {
     loadBroadcastHistory();
   }
