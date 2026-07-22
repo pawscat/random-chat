@@ -644,18 +644,19 @@ async function clearWaitingUser(userId) {
   await removeFromWaitingQueue(userId);
 }
 
-async function createChatPair(userA, userB) {
+  async function createChatPair(userA, userB) {
   const a = Number(userA);
   const b = Number(userB);
   const now = Date.now();
+  const sessionId = Date.now().toString(36) + '-' + Math.random().toString(36).substr(2, 9);
   const tx = await client.transaction('write');
   try {
     await tx.execute({ sql: queries.upsertUser, args: [a, now, now, null, null, null, null] });
     await tx.execute({ sql: queries.upsertUser, args: [b, now, now, null, null, null, null] });
     await tx.execute({ sql: queries.removeFromWaitingQueue, args: [a] });
     await tx.execute({ sql: queries.removeFromWaitingQueue, args: [b] });
-    await tx.execute({ sql: queries.upsertChatPair, args: [a, b, now] });
-    await tx.execute({ sql: queries.upsertChatPair, args: [b, a, now] });
+    await tx.execute({ sql: queries.upsertChatPair, args: [a, b, now, sessionId] });
+    await tx.execute({ sql: queries.upsertChatPair, args: [b, a, now, sessionId] });
     await tx.execute({ sql: queries.updateUserStatus, args: ['chatting', a] });
     await tx.execute({ sql: queries.updateUserStatus, args: ['chatting', b] });
     await tx.execute({ sql: queries.updateLastActive, args: [now, a] });
