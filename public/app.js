@@ -963,7 +963,7 @@ async function loadHistory(page = 1) {
       let html = '';
       data.sessions.forEach(s => {
         const start = new Date(s.started_at).toLocaleString('id-ID');
-        const end = new Date(s.ended_at).toLocaleString('id-ID');
+        const end = new Date(s.last_message_at).toLocaleString('id-ID');
         html += `
           <tr>
             <td style="font-size: 0.8em; color: var(--text-secondary);">${s.session_id.substring(0,8)}...</td>
@@ -971,9 +971,9 @@ async function loadHistory(page = 1) {
             <td>${s.partner_id}</td>
             <td>${start}</td>
             <td>${end}</td>
-            <td>${s.msg_count}</td>
+            <td>${s.message_count}</td>
             <td>
-              <button class="btn btn-primary" onclick="viewChatHistory('${s.session_id}', '${s.user_id}', '${s.partner_id}')">👁️ Lihat Chat</button>
+              <button class="action-btn" onclick="viewChatHistory('${s.session_id}', '${s.user_id}', '${s.partner_id}')">👁️ Lihat Chat</button>
             </td>
           </tr>
         `;
