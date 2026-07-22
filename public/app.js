@@ -1045,3 +1045,42 @@ async function viewChatHistory(sessionId, userId, partnerId) {
     console.error('Failed to fetch history logs:', err);
   }
 }
+
+// ===================== PING TEST =====================
+const pingBtn = $('#ping-btn');
+if (pingBtn) {
+  pingBtn.addEventListener('click', async () => {
+    $('#ping-modal').style.display = 'flex';
+    $('#ping-loading').style.display = 'block';
+    $('#ping-results').style.display = 'none';
+    
+    const start = Date.now();
+    try {
+      const data = await apiGet('ping');
+      const end = Date.now();
+      const httpLatency = end - start;
+      
+      if (data.success) {
+        $('#ping-loading').style.display = 'none';
+        $('#ping-results').style.display = 'block';
+        $('#ping-http').textContent = `${httpLatency}ms`;
+        $('#ping-db').textContent = `${data.dbLatency}ms`;
+        $('#ping-total').textContent = `${httpLatency + data.dbLatency}ms`;
+      } else {
+        $('#ping-modal').style.display = 'none';
+        showToast('Gagal melakukan test ping', 'error');
+      }
+    } catch (e) {
+      $('#ping-modal').style.display = 'none';
+      showToast('Koneksi terputus', 'error');
+    }
+  });
+}
+
+const closePingModal = $('#close-ping-modal');
+if (closePingModal) {
+  closePingModal.addEventListener('click', () => {
+    $('#ping-modal').style.display = 'none';
+  });
+}
+

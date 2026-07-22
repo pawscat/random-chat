@@ -1148,6 +1148,12 @@ async function getChatHistorySessions() {
   }
 }
 
+async function pingDb() {
+  const start = Date.now();
+  await client.execute('SELECT 1');
+  return Date.now() - start;
+}
+
 module.exports = {
   processUserState,
   client, upsertUser, getUser, updateUserStatus, updateLastActive, listUsers, listActiveUsers,
@@ -1162,7 +1168,7 @@ module.exports = {
   resetReportWindowIfNeeded, logAdminAction, logBroadcast, listBroadcastTargets,
   getAdminStep, setAdminStep, deleteAdminStep, getReportStep, setReportStep, deleteReportStep,
   getRuntimeState, setRuntimeState, createBroadcastJob, getBroadcastJob, updateBroadcastJobProgress, finishBroadcastJob,
-  listBroadcastJobs, generateReportId, deleteUser, logChatMessage, getChatLogs, getChatLogsBySession, getChatHistorySessions
+  listBroadcastJobs, generateReportId, deleteUser, logChatMessage, getChatLogs, getChatLogsBySession, getChatHistorySessions, pingDb
 };
 async function listBroadcastJobs(page = 1, limit = 20) {
   const { safePage, safeLimit, offset } = normalizePagination(page, limit);

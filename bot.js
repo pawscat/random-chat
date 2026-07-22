@@ -14,7 +14,7 @@ const {
   countReportsByUser, countReportsAgainstUser, canCreateReport, recordReportCreated,
   logAdminAction, logBroadcast, listBroadcastTargets, getMessageRateLimit, setMessageRateLimit,
   getRuntimeState, setRuntimeState, createBroadcastJob, getBroadcastJob, updateBroadcastJobProgress,
-  finishBroadcastJob, generateReportId, getAdminStep, setAdminStep, deleteAdminStep, logChatMessage, processUserState
+  finishBroadcastJob, generateReportId, getAdminStep, setAdminStep, deleteAdminStep, logChatMessage, processUserState, pingDb
 } = database;
 
 function startMainBot() {
@@ -429,7 +429,7 @@ function startMainBot() {
       await enforceBanState(userId, { notifySelf: true, selfChatId: msg.chat.id });
       return;
     }
-    if (await getPartner(userId) || await getUserStatus(userId) === 'chatting') {
+    if (userState.partnerId || await getUserStatus(userId) === 'chatting') {
       await safeSendMessage(msg.chat.id, 'Anda sedang chatting. Gunakan /next atau /stop.');
       return;
     }
@@ -439,6 +439,31 @@ function startMainBot() {
     }
     await setUserState(userId, 'waiting');
     await findPartner(userId);
+  }));
+
+  bot.onText(/^\/ping(?:@\w+)?$/i, runSafely(async (msg) => {
+    if (!msg.from) return;
+    const userId = Number(msg.from.id);
+    if (!isAdmin(userId)) return;
+
+    const startMsg = Date.now();
+    const sentMsg = await safeSendMessage(msg.chat.id, 'Pinging...');
+    if (!sentMsg) return;
+    const endMsg = Date.now();
+    const apiLatency = endMsg - startMsg;
+    
+    const dbLatency = await pingDb();
+    
+    const text = `🏓 <b>Pong!</b>\n\n` +
+                 `🚀 <b>API Latency:</b> ${apiLatency}ms\n` +
+                 `💾 <b>DB Latency:</b> ${dbLatency}ms\n` +
+                 `⏱️ <b>Total Roundtrip:</b> ${apiLatency + dbLatency}ms`;
+                 
+    await bot.editMessageText(text, {
+      chat_id: msg.chat.id,
+      message_id: sentMsg.message_id,
+      parse_mode: 'HTML'
+    });
   }));
 
   bot.onText(/^\/stop(?:@\w+)?$/i, runSafely(async (msg) => {
