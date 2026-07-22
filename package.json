@@ -2,11 +2,9 @@
   "name": "anonymous-chat-telegram-bot",
   "version": "1.0.0",
   "description": "Telegram anonymous chat bot with report moderation and SQLite persistence",
-  "main": "index.js",
+  "main": "api/webhook.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon local-dev.js",
-    "check": "node --check bot.js && node --check reportBot.js && node --check database.js && node --check index.js"
+    "check": "node --check bot.js && node --check reportBot.js && node --check database.js"
   },
   "keywords": [
     "telegram",
@@ -20,8 +18,5 @@
     "@libsql/client": "^0.14.0",
     "dotenv": "^16.6.1",
     "node-telegram-bot-api": "^0.66.0"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.14"
   }
 }

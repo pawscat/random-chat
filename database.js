@@ -98,11 +98,6 @@ async function initDB() {
       step TEXT NOT NULL,
       updated_at INTEGER NOT NULL
     );
-    CREATE TABLE IF NOT EXISTS rate_limits_mem (
-      user_id INTEGER PRIMARY KEY,
-      window_start_at INTEGER NOT NULL,
-      count INTEGER NOT NULL DEFAULT 0
-    );
     CREATE TABLE IF NOT EXISTS broadcast_jobs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       admin_id INTEGER NOT NULL,
@@ -148,6 +143,7 @@ async function initDB() {
     "ALTER TABLE users ADD COLUMN last_name TEXT",
     "ALTER TABLE users ADD COLUMN language_code TEXT",
     "ALTER TABLE active_chat_logs ADD COLUMN file_id TEXT",
+    "DROP TABLE IF EXISTS rate_limits_mem",
     "ALTER TABLE active_chat_logs ADD COLUMN session_id TEXT",
     "ALTER TABLE active_chats ADD COLUMN session_id TEXT"
   ];
@@ -403,13 +399,6 @@ const queries = {
     ON CONFLICT(user_id) DO UPDATE SET report_id=excluded.report_id, step=excluded.step, updated_at=excluded.updated_at
   `,
   deleteReportStep: 'DELETE FROM report_steps WHERE user_id = ?',
-  
-  getMessageRateLimit: 'SELECT * FROM rate_limits_mem WHERE user_id = ?',
-  setMessageRateLimit: `
-    INSERT INTO rate_limits_mem (user_id, window_start_at, count)
-    VALUES (?, ?, ?)
-    ON CONFLICT(user_id) DO UPDATE SET window_start_at=excluded.window_start_at, count=excluded.count
-  `,
   
   getRuntimeState: 'SELECT value FROM runtime_state WHERE key = ?',
   setRuntimeState: `
@@ -1066,15 +1055,6 @@ async function deleteReportStep(userId) {
   await client.execute({ sql: queries.deleteReportStep, args: [Number(userId)] });
 }
 
-async function getMessageRateLimit(userId) {
-  const res = await client.execute({ sql: queries.getMessageRateLimit, args: [Number(userId)] });
-  return res.rows[0] ? { windowStart: res.rows[0].window_start_at, count: res.rows[0].count } : null;
-}
-
-async function setMessageRateLimit(userId, windowStart, count) {
-  await client.execute({ sql: queries.setMessageRateLimit, args: [Number(userId), windowStart, count] });
-}
-
 async function getRuntimeState(key) {
   const res = await client.execute({ sql: queries.getRuntimeState, args: [String(key)] });
   return res.rows[0] ? res.rows[0].value : null;
@@ -1180,7 +1160,7 @@ module.exports = {
   resolveReport, rejectReport, markReportBanned, deleteReport, countReportsByStatus: countReportsByStatusMap,
   countReportsByUser, countReportsAgainstUser, canCreateReport, recordReportCreated,
   resetReportWindowIfNeeded, logAdminAction, logBroadcast, listBroadcastTargets,
-  getAdminStep, setAdminStep, deleteAdminStep, getReportStep, setReportStep, deleteReportStep, getMessageRateLimit, setMessageRateLimit,
+  getAdminStep, setAdminStep, deleteAdminStep, getReportStep, setReportStep, deleteReportStep,
   getRuntimeState, setRuntimeState, createBroadcastJob, getBroadcastJob, updateBroadcastJobProgress, finishBroadcastJob,
   listBroadcastJobs, generateReportId, deleteUser, logChatMessage, getChatLogs, getChatLogsBySession, getChatHistorySessions
 };
