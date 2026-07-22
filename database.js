@@ -386,8 +386,8 @@ const queries = {
   `,
 
   countNonBannedUsers: 'SELECT COUNT(*) AS total FROM users WHERE is_banned = 0',
-  listNonBannedUsers: `
-    SELECT user_id FROM users WHERE is_banned = 0 ORDER BY user_id ASC LIMIT ? OFFSET ?
+  listNonBannedUsers: (limit, offset) => `
+    SELECT user_id FROM users WHERE is_banned = 0 ORDER BY user_id ASC LIMIT ${limit} OFFSET ${offset}
   `,
 
   // Shared store replacements
@@ -430,8 +430,8 @@ const queries = {
   finishBroadcastJob: `
     UPDATE broadcast_jobs SET status = 'completed' WHERE id = ?
   `,
-  listBroadcastJobs: `
-    SELECT * FROM broadcast_jobs ORDER BY created_at DESC LIMIT ? OFFSET ?
+  listBroadcastJobs: (limit, offset) => `
+    SELECT * FROM broadcast_jobs ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}
   `,
   countBroadcastJobs: `
     SELECT COUNT(*) as total FROM broadcast_jobs
@@ -972,7 +972,7 @@ async function listBroadcastTargets(page, limit) {
   const { safePage, safeLimit, offset } = normalizePagination(page, limit);
   const totalRes = await client.execute(queries.countNonBannedUsers);
   const total = totalRes.rows[0].total;
-  const rowsRes = await client.execute({ sql: queries.listNonBannedUsers, args: [safeLimit, offset] });
+  const rowsRes = await client.execute(queries.listNonBannedUsers(safeLimit, offset));
   return withPagination(rowsRes.rows, total, safePage, safeLimit);
 }
 
@@ -1099,6 +1099,6 @@ async function listBroadcastJobs(page = 1, limit = 20) {
   const { safePage, safeLimit, offset } = normalizePagination(page, limit);
   const countRes = await client.execute(queries.countBroadcastJobs);
   const total = countRes.rows[0]?.total || 0;
-  const res = await client.execute({ sql: queries.listBroadcastJobs, args: [safeLimit, offset] });
+  const res = await client.execute(queries.listBroadcastJobs(safeLimit, offset));
   return withPagination(res.rows, total, safePage, safeLimit);
 }
