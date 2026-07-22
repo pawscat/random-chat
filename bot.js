@@ -14,7 +14,7 @@ const {
   countReportsByUser, countReportsAgainstUser, canCreateReport, recordReportCreated,
   logAdminAction, logBroadcast, listBroadcastTargets, getMessageRateLimit, setMessageRateLimit,
   getRuntimeState, setRuntimeState, createBroadcastJob, getBroadcastJob, updateBroadcastJobProgress,
-  finishBroadcastJob, generateReportId, getAdminStep, setAdminStep, deleteAdminStep, logChatMessage
+  finishBroadcastJob, generateReportId, getAdminStep, setAdminStep, deleteAdminStep, logChatMessage, processUserState
 } = database;
 
 function startMainBot() {
