@@ -596,10 +596,6 @@ async function banUser(userId, adminId, reason) {
       const partnerId = Number(row.partner_id);
       await tx.execute({ sql: queries.removeActiveChatByUser, args: [partnerId] });
       await tx.execute({ sql: queries.updateUserStatus, args: ['idle', partnerId] });
-      await tx.execute({
-        sql: 'DELETE FROM active_chat_logs WHERE user_id = ? AND partner_id = ?',
-        args: [Math.min(uid, partnerId), Math.max(uid, partnerId)]
-      });
     }
     await tx.execute({ sql: queries.updateUserStatus, args: ['idle', uid] });
     await tx.commit();
@@ -731,19 +727,9 @@ async function removeChatPair(userId) {
     if (row && row.partner_id != null) {
       const partnerId = Number(row.partner_id);
       await tx.execute({ sql: queries.removeActiveChatByUser, args: [partnerId] });
-      
-      // Delete chat logs
-      const uid1 = Math.min(uid, partnerId);
-      const uid2 = Math.max(uid, partnerId);
-      await tx.execute({
-        sql: 'DELETE FROM active_chat_logs WHERE user_id = ? AND partner_id = ?',
-        args: [uid1, uid2]
-      });
-      await tx.commit();
-      return Number(row.partner_id);
     }
     await tx.commit();
-    return null;
+    return row ? Number(row.partner_id) : null;
   } catch(e) {
     await tx.rollback();
     throw e;
