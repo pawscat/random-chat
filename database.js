@@ -470,6 +470,63 @@ async function updateUserStatus(userId, status) {
   await client.execute({ sql: queries.updateUserStatus, args: [String(status), Number(userId)] });
 }
 
+async function touchUser(userId) {
+  // Hanya alias untuk upsert/update aktivitas tanpa mengubah logic
+  await upsertUser(userId);
+}
+
+async function processUserState(userId, profile = null) {
+  const uid = Number(userId);
+  const now = Date.now();
+  const username = profile?.username || null;
+  const firstName = profile?.first_name || null;
+  const lastName = profile?.last_name || null;
+  const languageCode = profile?.language_code || null;
+
+  const stmts = [
+    { sql: queries.upsertUser, args: [uid, now, now, username, firstName, lastName, languageCode] },
+    { sql: 'SELECT ban_reason FROM users WHERE user_id = ? AND status = ?', args: [uid, 'banned'] },
+    { sql: queries.getPartner, args: [uid] }
+  ];
+  
+  try {
+    const results = await client.batch(stmts, 'write');
+    const banRes = results[1];
+    const partnerRes = results[2];
+    
+    const isBanned = banRes.rows.length > 0;
+    const banReason = isBanned ? banRes.rows[0].ban_reason : null;
+    
+    const partnerRow = partnerRes.rows[0];
+    const partnerId = partnerRow ? Number(partnerRow.partner_id) : null;
+    const sessionId = partnerRow ? partnerRow.session_id : null;
+    
+    return {
+      banned: isBanned,
+      banReason: banReason,
+      partnerId,
+      sessionId
+    };
+  } catch (err) {
+    console.error('Batch processUserState error:', err);
+    // Fallback if batch fails
+    await upsertUser(uid, profile);
+    const isBan = await isUserBanned(uid);
+    let reason = null;
+    if (isBan) {
+      const user = await getUser(uid);
+      reason = user?.ban_reason || 'Melanggar aturan';
+    }
+    const partnerObj = await getPartner(uid);
+    return {
+      banned: isBan,
+      banReason: reason,
+      partnerId: partnerObj ? partnerObj.partnerId : null,
+      sessionId: partnerObj ? partnerObj.sessionId : null
+    };
+  }
+}
+
 async function updateLastActive(userId) {
   await upsertUser(userId);
 }
@@ -1112,6 +1169,7 @@ async function getChatHistorySessions() {
 }
 
 module.exports = {
+  processUserState,
   client, upsertUser, getUser, updateUserStatus, updateLastActive, listUsers, listActiveUsers,
   listWaitingUsers, listChattingUsers, getUserStats, banUser, unbanUser, isUserBanned,
   getBannedUsers, getUserInfo, addToWaitingQueue, removeFromWaitingQueue, getNextWaitingUser,
