@@ -88,22 +88,27 @@
     <!-- Main Content -->
     <main class="main-content">
 
+    <div id="global-actions-container" style="display: none;">
+      <div class="header-actions" id="global-header-actions">
+        <span id="last-updated" class="last-updated"></span>
+        <select id="auto-refresh-select" class="settings-input" style="width: auto; padding: 4px 8px; font-size: 0.9em; height: 36px; margin-right: 10px;">
+          <option value="0">Auto Refresh: Off</option>
+          <option value="1000">1 Detik</option>
+          <option value="5000">5 Detik</option>
+          <option value="10000">10 Detik</option>
+          <option value="30000" selected>30 Detik</option>
+          <option value="60000">1 Menit</option>
+        </select>
+        <button id="refresh-btn" class="refresh-btn" title="Refresh">🔄</button>
+      </div>
+    </div>
+
+
       <!-- Overview Page -->
       <section id="page-overview" class="page active">
         <div class="page-header">
           <h1>Overview</h1>
-          <div class="header-actions">
-            <span id="last-updated" class="last-updated"></span>
-            <select id="auto-refresh-overview" class="settings-input" style="width: auto; padding: 4px 8px; font-size: 0.9em; height: 36px; margin-right: 10px;">
-              <option value="0">Auto Refresh: Off</option>
-              <option value="1000">1 Detik</option>
-              <option value="5000">5 Detik</option>
-              <option value="10000">10 Detik</option>
-              <option value="30000" selected>30 Detik</option>
-              <option value="60000">1 Menit</option>
-            </select>
-            <button id="refresh-btn" class="refresh-btn" title="Refresh">🔄</button>
-          </div>
+          
         </div>
 
         <div class="stats-grid">
@@ -189,16 +194,7 @@
       <section id="page-server" class="page">
         <div class="page-header">
           <h1>Server Info</h1>
-          <div class="header-actions">
-            <select id="auto-refresh-server" class="settings-input" style="width: auto; padding: 4px 8px; font-size: 0.9em; height: 36px;">
-              <option value="0">Auto Refresh: Off</option>
-              <option value="1000">1 Detik</option>
-              <option value="5000">5 Detik</option>
-              <option value="10000">10 Detik</option>
-              <option value="30000" selected>30 Detik</option>
-              <option value="60000">1 Menit</option>
-            </select>
-          </div>
+          
         </div>
         <div class="server-grid">
           <div class="server-card" id="server-os">

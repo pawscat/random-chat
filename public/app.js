@@ -398,6 +398,9 @@ function switchPage(pageName) {
   const link = $(`[data-page="${pageName}"]`);
 
   if (page) page.classList.add('active');
+    const headerActions = document.getElementById('global-header-actions');
+    const pageHeader = page.querySelector('.page-header');
+    if (headerActions && pageHeader) pageHeader.appendChild(headerActions);
   if (link) link.classList.add('active');
 
   if (pageName === 'users') loadUsers();
@@ -604,7 +607,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateAutoRefresh(saveToStorage = true) {
     if (refreshIntervalId) clearInterval(refreshIntervalId);
 
-    const overviewSelect = $('#auto-refresh-overview');
+    const overviewSelect = $('#auto-refresh-select');
     const interval = Number(overviewSelect ? overviewSelect.value : 30000);
     
     if (saveToStorage) {
@@ -612,16 +615,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (interval > 0) {
-      refreshIntervalId = setInterval(() => {
-        if (authToken && ($('#page-overview').classList.contains('active') || $('#page-server').classList.contains('active'))) {
-          loadStats();
-        }
-      }, interval);
-    }
+        refreshIntervalId = setInterval(() => {
+          if (!authToken) return;
+          const activePage = document.querySelector('.page.active');
+          if (!activePage) return;
+          const id = activePage.id;
+          if (id === 'page-overview') loadStats();
+          if (id === 'page-server') loadStats();
+          if (id === 'page-users') loadUsers();
+          if (id === 'page-reports') loadReports();
+          if (id === 'page-sessions') loadSessions();
+          if (id === 'page-history') loadHistory(historyCurrentPage);
+        }, interval);
+      }
   }
 
-  const overviewSelect = $('#auto-refresh-overview');
-  const serverSelect = $('#auto-refresh-server');
+  const overviewSelect = $('#auto-refresh-select');
+  const serverSelect = $('#auto-refresh-select');
 
   if (savedRefreshInterval) {
     if (overviewSelect) overviewSelect.value = savedRefreshInterval;
